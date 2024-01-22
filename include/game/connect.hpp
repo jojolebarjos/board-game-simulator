@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 
 namespace game {
 namespace connect {
@@ -22,6 +24,12 @@ namespace connect {
   . . O O . . .
   . X O X . . X
 */
+
+
+using json = nlohmann::json;
+
+
+// TODO add noexcept everywhere?
 
 
 typedef uint8_t Action;
@@ -115,6 +123,29 @@ struct State {
 };
 
 
+/*
+void to_json(json& j, Action const& value) {
+    j = json{ {"index", value.index}, {"x", value.destination.x}, {"y", value.destination.y} };
+}
+
+
+void to_json(json& j, State const& value) {
+    j = json{ {"player", value.player}, {"winner", value.winner}, {"pieces", value.pieces} };
+}
+
+// TODO from
+
+void from_json(const json& j, person& p) {
+    j.at("name").get_to(p.name);
+    j.at("address").get_to(p.address);
+    j.at("age").get_to(p.age);
+}
+
+*/
+
+
+// TODO is this concept of "context" the best we can do?
+
 template <unsigned H, unsigned W, unsigned N>
 struct Context {
     using State = State<H, W, N>;
@@ -122,6 +153,7 @@ struct Context {
     constexpr void clear() {}
 
     constexpr State sample_initial_state() {
+        // TODO should maybe be given as input and modified?
         State state;
         state.initialize();
         return state;
@@ -142,6 +174,7 @@ struct Context {
     }
 
     constexpr State sample_next_state(State const& state, Action action) {
+        // TODO should maybe be modified in place?
         State next_state = state;
         next_state.apply(action);
         return next_state;
@@ -153,6 +186,7 @@ struct Context {
 
 template <unsigned H, unsigned W, unsigned N>
 struct Traits {
+    // TODO reward object?
     typedef State<H, W, N> State;
     typedef Action Action;
     typedef Context<H, W, N> Context;
