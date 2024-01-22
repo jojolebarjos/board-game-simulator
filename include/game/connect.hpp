@@ -43,6 +43,15 @@ struct State {
     int8_t player;
     int8_t winner;
 
+    constexpr unsigned get_player() const {
+        return player;
+    }
+
+    constexpr bool has_ended() const {
+        // TODO
+        return false;
+    }
+
     constexpr void initialize() {
         for (unsigned i = 0; i < H; ++i) {
             for (unsigned j = 0; j < W; ++j) {
@@ -144,52 +153,11 @@ void from_json(const json& j, person& p) {
 */
 
 
-// TODO is this concept of "context" the best we can do?
-
-template <unsigned H, unsigned W, unsigned N>
-struct Context {
-    using State = State<H, W, N>;
-
-    constexpr void clear() {}
-
-    constexpr State sample_initial_state() {
-        // TODO should maybe be given as input and modified?
-        State state;
-        state.initialize();
-        return state;
-    }
-
-    constexpr unsigned get_player(State const& state) {
-        return state.player;
-    }
-
-    constexpr bool has_ended(State const& state) {
-        return state.winner >= 0;
-    }
-
-    // Reward get_reward(State const& state) {
-
-    constexpr void get_actions(std::vector<Action>& actions, State const& state) {
-        state.get_actions(actions);
-    }
-
-    constexpr State sample_next_state(State const& state, Action action) {
-        // TODO should maybe be modified in place?
-        State next_state = state;
-        next_state.apply(action);
-        return next_state;
-    }
-
-    // float get_reward_for(Reward reward, State const& state) {
-};
-
-
 template <unsigned H, unsigned W, unsigned N>
 struct Traits {
     // TODO reward object?
     typedef State<H, W, N> State;
     typedef Action Action;
-    typedef Context<H, W, N> Context;
 };
 
 
