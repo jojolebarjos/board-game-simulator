@@ -29,9 +29,6 @@ namespace connect {
 using json = nlohmann::json;
 
 
-// TODO add noexcept everywhere?
-
-
 typedef uint8_t Action;
 
 
@@ -42,15 +39,6 @@ struct State {
     int8_t grid[H][W];
     int8_t player;
     int8_t winner;
-
-    constexpr unsigned get_player() const {
-        return player;
-    }
-
-    constexpr bool has_ended() const {
-        // TODO
-        return false;
-    }
 
     constexpr void initialize() {
         for (unsigned i = 0; i < H; ++i) {
@@ -132,32 +120,95 @@ struct State {
 };
 
 
-/*
-void to_json(json& j, Action const& value) {
-    j = json{ {"index", value.index}, {"x", value.destination.x}, {"y", value.destination.y} };
-}
-
-
-void to_json(json& j, State const& value) {
-    j = json{ {"player", value.player}, {"winner", value.winner}, {"pieces", value.pieces} };
-}
-
-// TODO from
-
-void from_json(const json& j, person& p) {
-    j.at("name").get_to(p.name);
-    j.at("address").get_to(p.address);
-    j.at("age").get_to(p.age);
-}
-
-*/
-
-
 template <unsigned H, unsigned W, unsigned N>
 struct Traits {
     // TODO reward object?
     typedef State<H, W, N> State;
     typedef Action Action;
+
+    static constexpr void initialize(State& state) {
+        state.initialize();
+    }
+
+    static constexpr bool has_ended(State const& state) noexcept {
+        return state.player == -1;
+    }
+
+    static constexpr int get_player(State const& state) noexcept {
+        return state.player;
+    }
+
+    static constexpr int get_winner(State const& state) noexcept {
+        return state.winner;
+    }
+
+    // TODO reward
+
+    // TODO tensor representation
+
+    static constexpr void get_actions(State const& state, std::vector<Action>& actions) {
+        state.get_actions(actions);
+    }
+
+    static constexpr void apply(State& state, Action action) {
+        state.apply(action);
+    }
+
+    static constexpr json to_json(State const& state) {
+        // TODO
+        json j =
+        {
+            {"pi", 3.141},
+            {"happy", true},
+            {"name", "Niels"},
+            {"nothing", nullptr},
+            {
+                "answer", {
+                    {"everything", 42}
+                }
+            },
+            {"list", {1, 0, 2}},
+            {
+                "object", {
+                    {"currency", "USD"},
+                    {"value", 42.99}
+                }
+            }
+        };
+        return j;
+    }
+
+    static constexpr json to_json(State const& state, Action action) {
+        return action;
+    }
+
+    static constexpr void from_json(State& state, json const& j) {
+        // TODO
+        throw std::runtime_error("not implemented");
+    }
+
+    static constexpr void from_json(State const& state, Action& action, json const& j) {
+        // TODO
+        throw std::runtime_error("not implemented");
+    }
+
+    static constexpr auto compare(State const& left, State const& right) noexcept {
+        return left <=> right;
+    }
+
+    static constexpr auto compare(State const& left, Action left_action, State const& right, Action right_action) noexcept {
+        if (auto cmp = left <=> right; cmp != 0)
+            return cmp;
+        return left_action <=> right_action;
+    }
+
+    static constexpr size_t hash(State const& state) noexcept {
+        return 42;
+    }
+
+    static constexpr size_t hash(State const& state, Action action) noexcept {
+        return -1;
+    }
 };
 
 
