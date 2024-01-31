@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.15)
 
-add_executable(foo foo.cpp)
+add_executable(benchmark "benchmark.cpp")
 
-target_link_libraries(foo
+target_link_libraries(benchmark
 	PRIVATE
 		game
 )
