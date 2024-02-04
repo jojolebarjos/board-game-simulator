@@ -10,6 +10,7 @@
 #include <nlohmann/json.hpp>
 
 #include "./hash.hpp"
+#include "./tensor.hpp"
 
 
 namespace game {
@@ -39,7 +40,7 @@ typedef uint8_t Action;
 
 template <unsigned H, unsigned W, unsigned N>
 struct State {
-    std::array<std::array<int8_t, W>, H> grid;
+    tensor<int8_t, H, W> grid;
     int8_t player;
     int8_t winner;
 
