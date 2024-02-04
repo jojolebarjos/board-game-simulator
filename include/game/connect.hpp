@@ -3,10 +3,13 @@
 
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <vector>
 
 #include <nlohmann/json.hpp>
+
+#include "./hash.hpp"
 
 
 namespace game {
@@ -36,7 +39,7 @@ typedef uint8_t Action;
 
 template <unsigned H, unsigned W, unsigned N>
 struct State {
-    int8_t grid[H][W];
+    std::array<std::array<int8_t, W>, H> grid;
     int8_t player;
     int8_t winner;
 
@@ -50,6 +53,17 @@ struct State {
         winner = -1;
     }
 
+    constexpr void validate() const {
+        for (unsigned j = 0; j < W; ++j) {
+            for (unsigned i = 0; i < H; ++i) {
+                if (grid[i][j] < -1 || grid[i][j] > 1)
+                    throw std::runtime_error("grid contains invalid player indices");
+            }
+            // TODO check that grid is valid (e.g. no floating value)
+        }
+        // TODO check player and winner
+    }
+
     constexpr void swap() {
         for (unsigned i = 0; i < H; ++i) {
             for (unsigned j = 0; j < W; ++j) {
@@ -57,8 +71,9 @@ struct State {
                     grid[i][j] = 1 - grid[i][j];
             }
         }
-        player = 1 - player;
-        if (winner >= 0)
+        if (player >= 0)
+            player = 1 - player;
+        else if (winner >= 0)
             winner = 1 - winner;
     }
 
@@ -86,10 +101,17 @@ struct State {
         for (unsigned i_ = i, j_ = j; i_ < H - 1 && j_ < W - 1 && grid[++i_][++j_] == who; ++a);
 
         unsigned b = 1;
-        for (unsigned i_ = i, j_ = j; i_ > 0 && j_ < W - 1 && grid[--i_][++j_] == who; ++a);
-        for (unsigned i_ = i, j_ = j; i_ < H - 1 && j_ > 0 && grid[++i_][--j_] == who; ++a);
+        for (unsigned i_ = i, j_ = j; i_ > 0 && j_ < W - 1 && grid[--i_][++j_] == who; ++b);
+        for (unsigned i_ = i, j_ = j; i_ < H - 1 && j_ > 0 && grid[++i_][--j_] == who; ++b);
 
         return std::max({ h, v, a, b });
+    }
+
+    constexpr bool is_full() noexcept {
+        for (unsigned j = 0; j < W; ++j)
+            if (grid[H - 1][j] < 0)
+                return false;
+        return true;
     }
 
     constexpr void apply(Action action) {
@@ -97,17 +119,30 @@ struct State {
         for (unsigned i = 0; i < H; ++i) {
             if (grid[i][j] < 0) {
                 grid[i][j] = player;
+
+                // Check whether this is a win
                 if (count_at(i, j) >= N) {
                     winner = player;
+                    player = -1;
+                    return;
                 }
+
+                // Check whether this is a draw
+                if (is_full()) {
+                    player = -1;
+                    return;
+                }
+
                 break;
             }
         }
+
+        // Game has not ended
         player = player ? 0 : 1;
     }
 
     constexpr void get_actions(std::vector<Action>& actions) const {
-        if (winner < 0) {
+        if (player >= 0) {
             for (unsigned j = 0; j < W; ++j) {
                 if (grid[H - 1][j] < 0) {
                     actions.push_back(j);
@@ -126,12 +161,14 @@ struct Traits {
     typedef State<H, W, N> State;
     typedef Action Action;
 
+    // TODO should player count be static constexpr?
+
     static constexpr void initialize(State& state) {
         state.initialize();
     }
 
     static constexpr bool has_ended(State const& state) noexcept {
-        return state.player == -1;
+        return state.player < 0;
     }
 
     static constexpr int get_player(State const& state) noexcept {
@@ -142,9 +179,11 @@ struct Traits {
         return state.winner;
     }
 
-    // TODO reward
+    // TODO reward vector
 
-    // TODO tensor representation
+    // TODO tensor representation (should we swap player, so that it is always player 0?)
+
+    // TODO add data augmentation helper (i.e. mirror)
 
     static constexpr void get_actions(State const& state, std::vector<Action>& actions) {
         state.get_actions(actions);
@@ -155,27 +194,12 @@ struct Traits {
     }
 
     static constexpr json to_json(State const& state) {
-        // TODO
-        json j =
-        {
-            {"pi", 3.141},
-            {"happy", true},
-            {"name", "Niels"},
-            {"nothing", nullptr},
-            {
-                "answer", {
-                    {"everything", 42}
-                }
-            },
-            {"list", {1, 0, 2}},
-            {
-                "object", {
-                    {"currency", "USD"},
-                    {"value", 42.99}
-                }
-            }
+        // TODO maybe player/winner should be null?
+        return {
+            {"grid", state.grid},
+            {"player", state.player},
+            {"winner", state.winner}
         };
-        return j;
     }
 
     static constexpr json to_json(State const& state, Action action) {
@@ -183,13 +207,16 @@ struct Traits {
     }
 
     static constexpr void from_json(State& state, json const& j) {
-        // TODO
-        throw std::runtime_error("not implemented");
+        j.at("grid").get_to(state.grid);
+        j.at("player").get_to(state.player);
+        j.at("winner").get_to(state.winner);
+        state.validate();
     }
 
     static constexpr void from_json(State const& state, Action& action, json const& j) {
-        // TODO
-        throw std::runtime_error("not implemented");
+        j.get_to(action);
+        if (j >= W)
+            throw std::runtime_error("column index is out-of-bounds");
     }
 
     static constexpr auto compare(State const& left, State const& right) noexcept {
@@ -203,11 +230,11 @@ struct Traits {
     }
 
     static constexpr size_t hash(State const& state) noexcept {
-        return 42;
+        return Hash::compute(state.grid, state.player);
     }
 
     static constexpr size_t hash(State const& state, Action action) noexcept {
-        return -1;
+        return Hash::compute(state.grid, state.player, action);
     }
 };
 
