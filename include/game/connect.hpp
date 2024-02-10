@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <tuple>
 #include <vector>
 
 #include <nlohmann/json.hpp>
@@ -180,9 +181,23 @@ struct Traits {
         return state.winner;
     }
 
-    // TODO reward vector
+    static constexpr tensor<float, 2> get_reward(State const& state) noexcept {
+        // TODO what about intermediate rewards?
+        switch (state.winner) {
+        case 0:
+            return { 1.0f, -1.0f };
+        case 1:
+            return { -1.0f, 1.0f };
+        default:
+            return { 0.0f, 0.0f };
+        }
+    }
 
-    // TODO tensor representation (should we swap player, so that it is always player 0?)
+    static constexpr std::tuple<tensor<int8_t, H, W>> get_tensors(State const& state) {
+        // TODO should maybe accept some "option" argument?
+        // TODO actual implementation
+        return { state.grid };
+    }
 
     // TODO add data augmentation helper (i.e. mirror)
 

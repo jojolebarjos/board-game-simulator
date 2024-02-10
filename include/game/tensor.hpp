@@ -20,7 +20,8 @@ template <typename T, size_t Head, size_t... Tail>
 struct tensor {
 	std::array<tensor<T, Tail...>, Head> data;
 
-	static constexpr size_t dim = 1 + sizeof...(Tail);
+	static constexpr size_t ndim = 1 + sizeof...(Tail);
+	static constexpr size_t shape[ndim] = { Head, Tail... };
 
 	constexpr tensor<T, Tail...> const& operator[](size_t i) const {
 		return data[i];
@@ -29,6 +30,16 @@ struct tensor {
 	constexpr tensor<T, Tail...>& operator[](size_t i) {
 		return data[i];
 	}
+
+	constexpr tensor<T, Tail...> const& at(size_t i) const {
+		return data.at(i);
+	}
+
+	constexpr tensor<T, Tail...>& at(size_t i) {
+		return data.at(i);
+	}
+
+	// TODO data? other things typical in STL (begin, end, front, back, empty)?
 
 	// TODO add operator= for scalar? (would imply explicitly defaulting other assignments)
 
@@ -40,7 +51,8 @@ template <typename T, size_t Head>
 struct tensor<T, Head> {
 	std::array<T, Head> data;
 
-	static constexpr size_t dim = 1;
+	static constexpr size_t ndim = 1;
+	static constexpr size_t shape[ndim] = { Head };
 
 	constexpr T const& operator[](size_t i) const {
 		return data[i];
@@ -48,6 +60,14 @@ struct tensor<T, Head> {
 
 	constexpr T& operator[](size_t i) {
 		return data[i];
+	}
+
+	constexpr T const& at(size_t i) const {
+		return data.at(i);
+	}
+
+	constexpr T& at(size_t i) {
+		return data.at(i);
 	}
 
 	constexpr auto operator<=>(tensor<T, Head> const& right) const = default;
