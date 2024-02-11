@@ -160,8 +160,8 @@ struct State {
 template <unsigned H, unsigned W, unsigned N>
 struct Traits {
     // TODO reward object?
-    typedef State<H, W, N> State;
-    typedef Action Action;
+    using State = game::connect::State<H, W, N>;
+    using Action = game::connect::Action;
 
     // TODO should player count be static constexpr?
 
