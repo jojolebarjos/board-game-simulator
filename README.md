@@ -1,7 +1,7 @@
 # Board game simulator
 
 This C++ header-only library offers a framework for simulating a variety of board games, including Connect4 and Chinese Checkers.
-It is crafted for reinforcement learning applications, enabling numerous playthroughs while emphasizing template programming and minimizing heap allocations.
+It is designed for reinforcement learning applications, enabling numerous playthroughs while emphasizing template programming and minimizing heap allocations.
 
 The library introduces a unified representation of games via states and actions.
 In each state, the current player chooses an action from a set of legal moves, resulting in a transition to a new state.
@@ -20,6 +20,8 @@ include(FetchContent)
 FetchContent_Declare(
   game
   GIT_REPOSITORY https://github.com/jojolebarjos/board-game-simulator.git
+  GIT_TAG main
+  GIT_SHALLOW 1
 )
 FetchContent_MakeAvailable(game)
 ```
@@ -28,7 +30,7 @@ The [`src`](./src/) and [`tests`](./tests/) folders contain usage examples, whic
 To compile and run them, use CMake directly on this repository:
 
 ```
-git clone --depth 0 https://github.com/jojolebarjos/board-game-simulator.git
+git clone https://github.com/jojolebarjos/board-game-simulator.git
 cd board-game-simulator
 ```
 
