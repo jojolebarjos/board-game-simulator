@@ -1,11 +1,11 @@
 # Board game simulator
 
-This C++ header-only library provides a framework for simulating various board games, such as Connect4 and Chinese Checkers.
-It is designed for reinforcement learning, where many playthroughs are performed, and relies heavily on template programming and limits head allocations to the minimum.
+This C++ header-only library offers a framework for simulating a variety of board games, including Connect4 and Chinese Checkers.
+It is crafted for reinforcement learning applications, enabling numerous playthroughs while emphasizing template programming and minimizing heap allocations.
 
-A unified representation of games is provided through states and actions.
-At each state, the current player selects an action from a set of legal moves, leading to a new state.
-When a terminal state is reached, a reward is provided, according to the outcome of the playthrough.
+The library introduces a unified representation of games via states and actions.
+In each state, the current player chooses an action from a set of legal moves, resulting in a transition to a new state.
+Upon reaching a terminal state, a reward is assigned based on the outcome of the playthrough.
 
 For ease of integration with common machine learning frameworks, Python bindings are provided in a [separate repository](https://github.com/jojolebarjos/board-game-simulator-python).
 
