@@ -209,7 +209,7 @@ struct Traits {
         state.apply(action);
     }
 
-    static constexpr json to_json(State const& state) {
+    static json to_json(State const& state) {
         // TODO maybe player/winner should be null?
         return {
             {"grid", state.grid},
@@ -218,7 +218,7 @@ struct Traits {
         };
     }
 
-    static constexpr json to_json(State const& state, Action action) {
+    static json to_json(State const& state, Action action) {
         return action;
     }
 
