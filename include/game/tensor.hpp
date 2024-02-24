@@ -10,130 +10,164 @@
 namespace game {
 
 
-using json = nlohmann::json;
+template <typename T, size_t... Shape>
+struct tensor;
 
 
-// TODO properly add noexcept
-
+namespace detail {
 
 template <typename T, size_t Head, size_t... Tail>
-struct tensor {
-	std::array<tensor<T, Tail...>, Head> data;
-
-	static constexpr size_t ndim = 1 + sizeof...(Tail);
-	static constexpr size_t shape[ndim] = { Head, Tail... };
-
-	constexpr tensor<T, Tail...> const& operator[](size_t i) const {
-		return data[i];
-	}
-
-	constexpr tensor<T, Tail...>& operator[](size_t i) {
-		return data[i];
-	}
-
-	constexpr tensor<T, Tail...> const& at(size_t i) const {
-		return data.at(i);
-	}
-
-	constexpr tensor<T, Tail...>& at(size_t i) {
-		return data.at(i);
-	}
-
-	// TODO data? other things typical in STL (begin, end, front, back, empty)?
-
-	// TODO add operator= for scalar? (would imply explicitly defaulting other assignments)
-
-	constexpr auto operator<=>(tensor<T, Head, Tail...> const& right) const = default;
+struct tensor_types {
+	using value_type = tensor<T, Tail...>;
+	using data_type = std::array<value_type, Head>;
 };
 
 
 template <typename T, size_t Head>
-struct tensor<T, Head> {
-	std::array<T, Head> data;
+struct tensor_types<T, Head> {
+	using value_type = T;
+	using data_type = std::array<value_type, Head>;
+};
 
-	static constexpr size_t ndim = 1;
-	static constexpr size_t shape[ndim] = { Head };
+}
 
-	constexpr T const& operator[](size_t i) const {
-		return data[i];
+
+template <typename T, size_t... Shape>
+struct tensor {
+
+	using value_type = typename detail::tensor_types<T, Shape...>::value_type;
+	using data_type = typename detail::tensor_types<T, Shape...>::data_type;
+
+	data_type values;
+
+	static constexpr size_t ndim = sizeof...(Shape);
+	static constexpr std::array<size_t, ndim> shape = { Shape... };
+
+	template <typename U>
+	explicit constexpr operator tensor<U, Shape...>() const noexcept {
+		tensor<U, Shape...> result;
+		for (size_t i = 0; i < values.size(); ++i)
+			result[i] = static_cast<tensor<U, Shape...>::value_type>(values[i]);
+		return result;
 	}
 
-	constexpr T& operator[](size_t i) {
-		return data[i];
+	constexpr size_t size() const noexcept {
+		return values.size();
 	}
 
-	constexpr T const& at(size_t i) const {
-		return data.at(i);
+	constexpr value_type* data() noexcept {
+		return values.data();
 	}
 
-	constexpr T& at(size_t i) {
-		return data.at(i);
+	constexpr value_type const* data() const noexcept {
+		return values.data();
 	}
 
-	constexpr auto operator<=>(tensor<T, Head> const& right) const = default;
+	constexpr auto const& operator[](size_t i) const noexcept {
+		return values[i];
+	}
+
+	constexpr auto& operator[](size_t i) noexcept {
+		return values[i];
+	}
+
+	constexpr auto const& at(size_t i) const {
+		return values.at(i);
+	}
+
+	constexpr auto& at(size_t i) {
+		return values.at(i);
+	}
+
+	constexpr auto begin() const noexcept {
+		return values.begin();
+	}
+
+	constexpr auto begin() noexcept {
+		return values.begin();
+	}
+
+	constexpr auto end() const noexcept {
+		return values.end();
+	}
+
+	constexpr auto end() noexcept {
+		return values.end();
+	}
+
+	constexpr auto operator<=>(tensor<T, Shape...> const& right) const noexcept = default;
 };
 
 
-template <typename T, size_t Head, size_t... Tail>
-constexpr tensor<T, Head, Tail...> operator+(tensor<T, Head, Tail...> const& right) {
+template <typename T, size_t... Shape>
+constexpr auto operator+(tensor<T, Shape...> const& right) noexcept {
 	return right;
 }
 
 
-template <typename T, size_t Head, size_t... Tail>
-constexpr tensor<T, Head, Tail...> operator-(tensor<T, Head, Tail...> const& right) {
-	tensor<T, Head, Tail...> result;
-	for (size_t i = 0; i < Head; ++i)
+template <typename T, size_t... Shape>
+constexpr auto operator-(tensor<T, Shape...> const& right) noexcept {
+	tensor<T, Shape...> result;
+	for (size_t i = 0; i < right.size(); ++i)
 		result[i] = -right[i];
 	return result;
 }
 
 
-template <typename T, typename U, size_t Head, size_t... Tail>
-constexpr tensor<T, Head, Tail...>& operator+=(tensor<T, Head, Tail...>& left, tensor<U, Head, Tail...> const& right) {
-	for (size_t i = 0; i < Head; ++i)
-		left[i] += right[i];
-	return left;
+#define GAME_TENSOR_OP(OP)                                                                                 \
+                                                                                                           \
+template <typename T, size_t... Shape>                                                                     \
+constexpr auto& operator OP##=(tensor<T, Shape...>& left, tensor<T, Shape...> const& right) noexcept {     \
+	for (size_t i = 0; i < left.size(); ++i)                                                               \
+		left[i] OP##= right[i];                                                                            \
+	return left;                                                                                           \
+}                                                                                                          \
+                                                                                                           \
+template <typename T, size_t... Shape>                                                                     \
+constexpr auto operator OP(tensor<T, Shape...> const& left, tensor<T, Shape...> const& right) noexcept {   \
+	tensor<T, Shape...> result(left);                                                                      \
+	return result OP##= right;                                                                             \
+}                                                                                                          \
+                                                                                                           \
+template <typename T, size_t... Shape>                                                                     \
+constexpr auto& operator OP##=(tensor<T, Shape...>& left, T const& right) noexcept {                       \
+	for (size_t i = 0; i < left.size(); ++i)                                                               \
+		left[i] OP##= right;                                                                               \
+	return left;                                                                                           \
+}                                                                                                          \
+                                                                                                           \
+template <typename T, size_t... Shape>                                                                     \
+constexpr auto operator OP(tensor<T, Shape...> const& left, T const& right) noexcept {                     \
+	tensor<T, Shape...> result(left);                                                                      \
+	return result OP##= right;                                                                             \
+}                                                                                                          \
+                                                                                                           \
+template <typename T, size_t... Shape>                                                                     \
+constexpr auto operator OP(T const& left, tensor<T, Shape...> const& right) noexcept {                     \
+	tensor<T, Shape...> result;                                                                            \
+	for (size_t i = 0; i < right.size(); ++i)                                                              \
+		result[i] = left OP right[i];                                                                      \
+	return result;                                                                                         \
+}                                                                                                          \
+
+GAME_TENSOR_OP(+)
+GAME_TENSOR_OP(-)
+GAME_TENSOR_OP(*)
+GAME_TENSOR_OP(/)
+GAME_TENSOR_OP(%)
+
+#undef GAME_TENSOR_OP
+
+
+template <typename T, size_t... Shape>
+void to_json(nlohmann::json& j, tensor<T, Shape...> const& value) {
+	j = nlohmann::json(value.values);
 }
 
 
-template <typename T, typename U, size_t Head, size_t... Tail>
-constexpr tensor<T, Head, Tail...> operator+(tensor<T, Head, Tail...> const& left, tensor<U, Head, Tail...> const& right) {
-	tensor<T, Head, Tail...> result(left);
-	return result += right;
-}
-
-
-template <typename T, typename U, size_t Head, size_t... Tail>
-constexpr tensor<T, Head, Tail...>& operator-=(tensor<T, Head, Tail...>& left, tensor<U, Head, Tail...> const& right) {
-	for (size_t i = 0; i < Head; ++i)
-		left[i] -= right[i];
-	return left;
-}
-
-
-template <typename T, typename U, size_t Head, size_t... Tail>
-constexpr tensor<T, Head, Tail...> operator-(tensor<T, Head, Tail...> const& left, tensor<U, Head, Tail...> const& right) {
-	tensor<T, Head, Tail...> result(left);
-	return result -= right;
-}
-
-
-// TODO operation with scalar
-// TODO operation with tensor of smaller dim
-// TODO operators *, /, %
-// TODO does it make sense to add boolean operators (i.e. ~, &, |, ^)?
-
-
-template <typename T, size_t Head, size_t... Tail>
-void to_json(json& j, tensor<T, Head, Tail...> const& value) {
-	j = json(value.data);
-}
-
-
-template <typename T, size_t Head, size_t... Tail>
-void from_json(json const& j, tensor<T, Head, Tail...>& value) {
-	j.get_to(value.data);
+template <typename T, size_t... Shape>
+void from_json(nlohmann::json const& j, tensor<T, Shape...>& value) {
+	j.get_to(value.values);
 }
 
 

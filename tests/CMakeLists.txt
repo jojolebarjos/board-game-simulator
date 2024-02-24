@@ -15,3 +15,4 @@ function(add_game_test TEST_NAME TEST_SOURCE)
 endfunction()
 
 add_game_test(test_connect connect.cpp)
+add_game_test(test_tensor tensor.cpp)

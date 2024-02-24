@@ -29,6 +29,7 @@ struct Hash {
 
 	constexpr void update() noexcept {}
 
+	// TODO remove this, and use proper type-safe hash (e.g. careful with floats...)
 	template <typename T>
 	constexpr void update(T const& data) noexcept {
 		update(reinterpret_cast<void const*>(&data), sizeof(data));
