@@ -160,6 +160,14 @@ GAME_TENSOR_OP(%)
 
 
 template <typename T, size_t... Shape>
+struct Hash<tensor<T, Shape...>> {
+	constexpr size_t operator()(tensor<T, Shape...> const& value) noexcept {
+		return hash_of(value.values);
+	}
+};
+
+
+template <typename T, size_t... Shape>
 void to_json(nlohmann::json& j, tensor<T, Shape...> const& value) {
 	j = nlohmann::json(value.values);
 }

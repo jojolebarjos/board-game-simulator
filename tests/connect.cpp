@@ -58,3 +58,18 @@ TEST_CASE("Sanity checks on small board") {
     CHECK(Traits::has_ended(state));
     CHECK(Traits::get_winner(state) == 0);
 }
+
+
+TEST_CASE("Hash") {
+
+    using Traits = game::connect::Traits<2, 3, 2>;
+    using State = Traits::State;
+    using Action = Traits::Action;
+
+    State state;
+    std::vector<Action> actions;
+
+    Traits::initialize(state);
+
+    CHECK(Traits::hash(state));
+}

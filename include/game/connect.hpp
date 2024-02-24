@@ -242,11 +242,11 @@ struct Traits {
     }
 
     static constexpr size_t hash(State const& state) noexcept {
-        return Hash::compute(state.grid, state.player);
+        return game::hash(state.grid, state.player);
     }
 
     static constexpr size_t hash(State const& state, Action action) noexcept {
-        return Hash::compute(state.grid, state.player, action);
+        return game::hash(state.grid, state.player, action);
     }
 };
 
