@@ -6,6 +6,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include "./hash.hpp"
+
 
 namespace game {
 

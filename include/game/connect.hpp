@@ -218,14 +218,14 @@ struct Traits {
         return action;
     }
 
-    static constexpr void from_json(State& state, nlohmann::json const& j) {
+    static void from_json(State& state, nlohmann::json const& j) {
         j.at("grid").get_to(state.grid);
         j.at("player").get_to(state.player);
         j.at("winner").get_to(state.winner);
         state.validate();
     }
 
-    static constexpr void from_json(State const& state, Action& action, nlohmann::json const& j) {
+    static void from_json(State const& state, Action& action, nlohmann::json const& j) {
         j.get_to(action);
         if (j >= W)
             throw std::runtime_error("column index is out-of-bounds");
