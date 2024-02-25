@@ -42,8 +42,7 @@ struct tensor {
 
 	data_type values;
 
-	static constexpr size_t ndim = sizeof...(Shape);
-	static constexpr std::array<size_t, ndim> shape = { Shape... };
+	static constexpr std::array<size_t, sizeof...(Shape)> shape = { Shape... };
 
 	template <typename U>
 	explicit constexpr operator tensor<U, Shape...>() const noexcept {

@@ -14,7 +14,6 @@ TEST_CASE("Shapes") {
 
     tensor<int, 1, 2, 3> x;
 
-    CHECK(x.ndim == 3);
     CHECK(x.shape == std::array<size_t, 3> {1, 2, 3});
     CHECK(x.size() == 1);
     CHECK(x[0].size() == 2);
