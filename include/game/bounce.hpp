@@ -259,6 +259,7 @@ struct State {
 
 			// Collect moves
 			Walk walk(grid);
+			size_t count = actions.size();
 			for (int8_t x = 0; x < WIDTH; ++x)
 				if (grid[y][x] > 0) {
 					walk.collect(x, y, dy);
@@ -266,7 +267,10 @@ struct State {
 						actions.emplace_back(Coordinate{ x, y }, to);
 				}
 
-			// TODO it is possible to have no possible move... does it mean immediate loss?
+			// In rare cases, player might be blocked, but the opponent shouldn't, so force skip
+			// TODO double check that... or should we say that not being to move is instant loss?
+			if (actions.size() == count)
+				actions.emplace_back(Coordinate{ 0, 0 }, Coordinate{ 0, 0 });
 		}
 	}
 
@@ -374,7 +378,7 @@ struct Traits {
 	}
 
 	static constexpr size_t hash(State const& state, Action const& action) noexcept {
-		return game::hash(state.grid, state.player, action);
+		return game::hash(state.grid, state.player, action.from, action.to);
 	}
 };
 
