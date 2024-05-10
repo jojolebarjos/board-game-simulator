@@ -14,6 +14,7 @@ function(add_game_test TEST_NAME TEST_SOURCE)
 	add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endfunction()
 
+add_game_test(test_bounce bounce.cpp)
 add_game_test(test_chinese_checkers chinese_checkers.cpp)
 add_game_test(test_connect connect.cpp)
 add_game_test(test_hash hash.cpp)
