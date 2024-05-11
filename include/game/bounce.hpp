@@ -21,6 +21,7 @@ namespace bounce {
 /*
   The origin of the 7x6 grid is the lower-left corner.
   Special "winning" rows are at y=-1 and y=7, with x=0 (centered for visual purpose).
+  If a player cannot move, they lose.
 
        .
   1 2 3 3 2 1
@@ -42,31 +43,25 @@ constexpr unsigned WIDTH = 6;
 typedef tensor<int8_t, 2> Coordinate;
 
 
-
 struct Walk {
 	tensor<int8_t, HEIGHT, WIDTH> grid;
-	std::set<Coordinate> moves;
 
 	Walk(tensor<int8_t, HEIGHT, WIDTH> const& grid) : grid(grid) {}
 
-	void collect(int x, int y, int dy) {
-		moves.clear();
+	template <typename Visitor>
+	void operator()(Visitor visitor, int x, int y, int dy) {
 		int value = grid[y][x];
 		if (value > 0) {
 			grid[y][x] = 0;
-			recurse(x, y, 0, dy, value);
+			recurse(visitor, x, y, 0, dy, value);
 			grid[y][x] = value;
 		}
 	}
 
 private:
 
-	void add(int x, int y) {
-		Coordinate c = {x, y};
-		moves.insert(c);
-	}
-
-	void recurse(int x, int y, int dx, int dy, int remaining) {
+	template <typename Visitor>
+	void recurse(Visitor visitor, int x, int y, int dx, int dy, int remaining) {
 
 		// Up
 		if (dy >= 0) {
@@ -76,22 +71,22 @@ private:
 				// Empty space
 				if (value == 0) {
 					if (remaining == 1)
-						add(x, y + 1);
+						visitor(x, y + 1);
 					else
-						recurse(x, y + 1, 0, dy, remaining - 1);
+						recurse(visitor, x, y + 1, 0, dy, remaining - 1);
 				}
 
 				// Bounce
 				else if (value > 0 && remaining == 1) {
 					grid[y + 1][x] = -1;
-					recurse(x, y + 1, 0, dy, value);
+					recurse(visitor, x, y + 1, 0, dy, value);
 					grid[y + 1][x] = value;
 				}
 			}
 
 			// Winning move
 			else if (remaining == 1) {
-				add(0, HEIGHT);
+				visitor(0, HEIGHT);
 			}
 		}
 
@@ -103,22 +98,22 @@ private:
 				// Empty space
 				if (value == 0) {
 					if (remaining == 1)
-						add(x, y - 1);
+						visitor(x, y - 1);
 					else
-						recurse(x, y - 1, 0, dy, remaining - 1);
+						recurse(visitor, x, y - 1, 0, dy, remaining - 1);
 				}
 
 				// Bounce
 				else if (value > 0 && remaining == 1) {
 					grid[y - 1][x] = -1;
-					recurse(x, y - 1, 0, dy, value);
+					recurse(visitor, x, y - 1, 0, dy, value);
 					grid[y - 1][x] = value;
 				}
 			}
 
 			// Winning move
 			else if (remaining == 1) {
-				add(0, -1);
+				visitor(0, -1);
 			}
 		}
 
@@ -129,15 +124,15 @@ private:
 			// Empty space
 			if (value == 0) {
 				if (remaining == 1)
-					add(x - 1, y);
+					visitor(x - 1, y);
 				else
-					recurse(x - 1, y, -1, dy, remaining - 1);
+					recurse(visitor, x - 1, y, -1, dy, remaining - 1);
 			}
 
 			// Bounce
 			else if (value > 0 && remaining == 1) {
 				grid[y][x - 1] = -1;
-				recurse(x - 1, y, 0, dy, value);
+				recurse(visitor, x - 1, y, 0, dy, value);
 				grid[y][x - 1] = value;
 			}
 		}
@@ -149,15 +144,15 @@ private:
 			// Empty space
 			if (value == 0) {
 				if (remaining == 1)
-					add(x + 1, y);
+					visitor(x + 1, y);
 				else
-					recurse(x + 1, y, 1, dy, remaining - 1);
+					recurse(visitor, x + 1, y, 1, dy, remaining - 1);
 			}
 
 			// Bounce
 			else if (value > 0 && remaining == 1) {
 				grid[y][x + 1] = -1;
-				recurse(x + 1, y, 0, dy, value);
+				recurse(visitor, x + 1, y, 0, dy, value);
 				grid[y][x + 1] = value;
 			}
 		}
@@ -222,7 +217,7 @@ struct State {
 		uint8_t value = grid[action.from[1]][action.from[0]];
 		grid[action.from[1]][action.from[0]] = 0;
 
-		// Special case, play wins
+		// Special case, player wins
 		if (action.to[1] < 0 || action.to[1] >= HEIGHT) {
 			winner = player;
 			player = -1;
@@ -234,6 +229,15 @@ struct State {
 
 		// Game has not ended
 		player = player ? 0 : 1;
+
+		// If current player cannot play, they lose
+		// However, if the other cannot either, this is a draw
+		if (!can_play()) {
+			player = player ? 0 : 1;
+			if (can_play())
+				winner = player;
+			player = -1;
+		}
 	}
 
 	constexpr bool is_row_empty(int y) const {
@@ -244,38 +248,75 @@ struct State {
 		return true;
 	}
 
-	void get_actions(std::vector<Action>& actions) const {
+	template <typename Visitor>
+	void visit_actions(Visitor visitor) const {
 
-		// If game has not ended
-		if (player >= 0) {
+		// Check whether game has ended
+		if (player < 0 || player > 1)
+			return;
 
-			// Player 0 moves upward, while player 1 moves downward
-			int8_t y = 0;
-			int8_t dy = 1;
-			if (player == 1) {
-				y = HEIGHT - 1;
-				dy = -1;
-			}
-
-			// Can only play pieces on the closest row
-			while (is_row_empty(y))
-				y += dy;
-
-			// Collect moves
-			Walk walk(grid);
-			size_t count = actions.size();
-			for (int8_t x = 0; x < WIDTH; ++x)
-				if (grid[y][x] > 0) {
-					walk.collect(x, y, dy);
-					for (Coordinate const& to : walk.moves)
-						actions.emplace_back(Coordinate{ x, y }, to);
-				}
-
-			// In rare cases, player might be blocked, but the opponent shouldn't, so force skip
-			// TODO double check that... or should we say that not being to move is instant loss?
-			if (actions.size() == count)
-				actions.emplace_back(Coordinate{ 0, 0 }, Coordinate{ 0, 0 });
+		// Player 0 moves upward, while player 1 moves downward
+		int8_t y = 0;
+		int8_t dy = 1;
+		int8_t limit = HEIGHT;
+		if (player == 1) {
+			y = HEIGHT - 1;
+			dy = -1;
+			limit = -1;
 		}
+
+		// Can only play pieces on the closest row
+		while (is_row_empty(y)) {
+			y += dy;
+
+			// Check if board is empty
+			if (y == limit)
+				return;
+		}
+
+		// Enumerate moves
+		Walk walk(grid);
+		for (int8_t x = 0; x < WIDTH; ++x)
+			if (grid[y][x] > 0) {
+				auto subvisitor = [&](int x_, int y_) {
+					Action action = { x, y, (int8_t)x_, (int8_t)y_ };
+					visitor(action);
+				};
+				walk(subvisitor, x, y, dy);
+			}
+	}
+
+	bool can_play() const {
+		auto visitor = [](Action const&) { throw 0; };
+		try {
+			visit_actions(visitor);
+		}
+		catch (int) {
+			return true;
+		}
+		return false;
+	}
+
+	void get_actions(std::vector<Action>& actions) const {
+		std::set<Action> buffer;
+		auto visitor = [&](Action const& action) {
+			buffer.insert(action);
+		};
+		visit_actions(visitor);
+		actions.insert(actions.end(), buffer.begin(), buffer.end());
+	}
+
+	void validate() const {
+
+		// Forbid invalid values in grid
+		for (int y = 0; y < HEIGHT; ++y)
+			for (int x = 0; x < WIDTH; ++x)
+				if (grid[y][x] < 0)
+					throw std::runtime_error("values must be non-negative");
+
+		// Current player must be able to move
+		if (player >= 0 && !can_play())
+			throw std::runtime_error("player has no valid move");
 	}
 
 	constexpr auto operator<=>(State const& other) const = default;
@@ -354,25 +395,29 @@ struct Traits {
 	}
 
 	static void from_json(State& state, nlohmann::json const& j) {
+
+		// Decode JSON object
 		j.at("grid").get_to(state.grid);
 		j.at("player").get_to(state.player);
 		j.at("winner").get_to(state.winner);
-		for (int y = 0; y < HEIGHT; ++y)
-			for (int x = 0; x < WIDTH; ++x)
-				if (state.grid[y][x] < 0)
-					throw std::runtime_error("values must be non-negative");
+
+		// Validate state
+		state.validate();
 	}
 
 	static void from_json(State const& state, Action& action, nlohmann::json const& j) {
+
+		// Decode JSON object
 		j.at("from").at("x").get_to(action.from[0]);
 		j.at("from").at("y").get_to(action.from[1]);
 		j.at("to").at("x").get_to(action.to[0]);
 		j.at("to").at("y").get_to(action.to[1]);
-		if (action.from[0] < 0 || action.from[0] >= WIDTH || action.from[1] < 0 || action.from[1] >= HEIGHT)
-			throw std::runtime_error("\"from\" is out-of-bounds");
-		if (action.to[0] < 0 || action.to[0] >= WIDTH || action.to[1] < 0 || action.to[1] >= HEIGHT)
-			if (!(action.to[0] == 0 && (action.to[1] == -1 || action.to[1] == HEIGHT)))
-				throw std::runtime_error("\"to\" is out-of-bounds");
+
+		// Ensure action is valid
+		std::vector<Action> actions;
+		state.get_actions(actions);
+		if (std::find(actions.begin(), actions.end(), action) == actions.end())
+			throw std::runtime_error("invalid action");
 	}
 
 	static constexpr auto compare(State const& left, State const& right) noexcept {
