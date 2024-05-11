@@ -19,8 +19,10 @@ namespace bounce {
 
 
 /*
-  The origin of the 7x6 grid is the lower-left corner:
+  The origin of the 7x6 grid is the lower-left corner.
+  Special "winning" rows are at y=-1 and y=7, with x=0 (centered for visual purpose).
 
+       .
   1 2 3 3 2 1
   . . . . . .
   . . . . . .
@@ -28,6 +30,7 @@ namespace bounce {
   . . . . . .
   . . . . . .
   1 2 3 3 2 1
+       .
 */
 
 
@@ -220,8 +223,9 @@ struct State {
 		grid[action.from[1]][action.from[0]] = 0;
 
 		// Special case, play wins
-		if (action.to[0] < 0 || action.to[0] >= HEIGHT) {
+		if (action.to[1] < 0 || action.to[1] >= HEIGHT) {
 			winner = player;
+			player = -1;
 			return;
 		}
 
@@ -353,6 +357,10 @@ struct Traits {
 		j.at("grid").get_to(state.grid);
 		j.at("player").get_to(state.player);
 		j.at("winner").get_to(state.winner);
+		for (int y = 0; y < HEIGHT; ++y)
+			for (int x = 0; x < WIDTH; ++x)
+				if (state.grid[y][x] < 0)
+					throw std::runtime_error("values must be non-negative");
 	}
 
 	static void from_json(State const& state, Action& action, nlohmann::json const& j) {
@@ -360,7 +368,11 @@ struct Traits {
 		j.at("from").at("y").get_to(action.from[1]);
 		j.at("to").at("x").get_to(action.to[0]);
 		j.at("to").at("y").get_to(action.to[1]);
-		// TODO validate that action is valid
+		if (action.from[0] < 0 || action.from[0] >= WIDTH || action.from[1] < 0 || action.from[1] >= HEIGHT)
+			throw std::runtime_error("\"from\" is out-of-bounds");
+		if (action.to[0] < 0 || action.to[0] >= WIDTH || action.to[1] < 0 || action.to[1] >= HEIGHT)
+			if (!(action.to[0] == 0 && (action.to[1] == -1 || action.to[1] == HEIGHT)))
+				throw std::runtime_error("\"to\" is out-of-bounds");
 	}
 
 	static constexpr auto compare(State const& left, State const& right) noexcept {

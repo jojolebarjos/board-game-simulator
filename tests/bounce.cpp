@@ -16,4 +16,7 @@ TEST_CASE("Sanity checks") {
 
     Traits::initialize(state);
 
+    CHECK(!Traits::has_ended(state));
+
+    // TODO ...
 }

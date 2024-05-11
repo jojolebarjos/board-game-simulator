@@ -4,7 +4,7 @@
 #include "game/chinese_checkers.hpp"
 
 
-TEST_CASE("Sanity checks on small board") {
+TEST_CASE("Sanity checks") {
 
     using Traits = game::chinese_checkers::Traits;
     using State = Traits::State;
@@ -16,4 +16,6 @@ TEST_CASE("Sanity checks on small board") {
     Traits::initialize(state);
 
     CHECK(!Traits::has_ended(state));
+
+    // TODO ...
 }
