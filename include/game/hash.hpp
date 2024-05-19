@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <tuple>
 #include <type_traits>
+#include <vector>
 
 
 namespace game {
@@ -93,6 +94,19 @@ struct Hash<std::array<T, N>> {
 	constexpr size_t operator()(std::array<T, N> const& value) noexcept {
 		size_t result = HASH_BASIS;
 		for (size_t i = 0; i < N; ++i) {
+			result ^= hash_of(value[i]);
+			result *= HASH_PRIME;
+		}
+		return result;
+	}
+};
+
+
+template <typename T, typename Allocator>
+struct Hash<std::vector<T, Allocator>> {
+	constexpr size_t operator()(std::vector<T, Allocator> const& value) noexcept {
+		size_t result = HASH_BASIS;
+		for (size_t i = 0; i < value.size(); ++i) {
 			result ^= hash_of(value[i]);
 			result *= HASH_PRIME;
 		}

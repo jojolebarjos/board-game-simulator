@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cmath>
+#include <vector>
 
 #include "game/hash.hpp"
 #include "game/tensor.hpp"
@@ -35,5 +36,11 @@ TEST_CASE("Collections") {
         4, 5, 6,
     };
 
+    std::array<float, 4> y = { 1.0f, 2.0f, 3.0f, 4.0f };
+
+    std::vector<int64_t> z = { 1, 2, 3, 4, 5 };
+
     CHECK(hash(x));
+    CHECK(hash(y));
+    CHECK(hash(z));
 }
