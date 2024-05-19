@@ -86,7 +86,7 @@ private:
 
 			// Winning move
 			else if (remaining == 1) {
-				visitor(0, HEIGHT);
+				visitor(x, HEIGHT);
 			}
 		}
 
@@ -113,7 +113,7 @@ private:
 
 			// Winning move
 			else if (remaining == 1) {
-				visitor(0, -1);
+				visitor(x, -1);
 			}
 		}
 
