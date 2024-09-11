@@ -62,31 +62,29 @@ TEST_CASE("Comparison") {
 }
 
 
-/*
 TEST_CASE("Reshape") {
 
     tensor<int, -1> x;
 
-    CHECK(x.shape() == std::array<dim_t, 1> { 0 });
+    CHECK(x.shape().to_array() == std::array<dim_t, 1> { 0 });
 
     x = tensor<int, -1>(10);
 
-    CHECK(x.shape() == std::array<dim_t, 1> { 10 });
+    CHECK(x.shape().to_array() == std::array<dim_t, 1> { 10 });
 
     x.reshape({ 7 });
 
-    CHECK(x.shape() == std::array<dim_t, 1> { 7 });
+    CHECK(x.shape().to_array() == std::array<dim_t, 1> { 7 });
 
     tensor<int, -1, 2, -1> y;
 
-    CHECK(y.shape() == std::array<dim_t, 3> { 0, 2, 0 });
+    CHECK(y.shape().to_array() == std::array<dim_t, 3> { 0, 2, 0 });
 
     y = tensor<int, -1, 2, -1>({ 5, 8 });
 
-    CHECK(y.shape() == std::array<dim_t, 3> { 5, 2, 8 });
+    CHECK(y.shape().to_array() == std::array<dim_t, 3> { 5, 2, 8 });
 
-    y.reshape({ 27, 2, 4 });
+    y.reshape({ 27, 4 });
 
-    CHECK(y.shape() == std::array<dim_t, 3> { 27, 2, 4 });
+    CHECK(y.shape().to_array() == std::array<dim_t, 3> { 27, 2, 4 });
 }
-*/

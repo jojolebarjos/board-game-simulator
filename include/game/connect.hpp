@@ -4,6 +4,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <vector>
 
 #include "./tensor.hpp"
 

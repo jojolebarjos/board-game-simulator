@@ -76,12 +76,7 @@ struct tensor {
         return {};
     }
 
-    /*
-    constexpr void reshape(std::array<dim_t, ndim> const& s) {
-        if (s != shape())
-            throw shape_error();
-    }
-    */
+    constexpr void reshape(shape_t<Head, Tail...> const&) {}
 
     constexpr view<T, Tail...> operator[](dim_t index) {
         return view<T, Tail...>(storage.data() + index * (Tail * ...));
@@ -153,22 +148,10 @@ struct tensor<T, Head, Tail...> {
         return shape_;
     }
 
-    /*
-    constexpr void reshape(std::array<dim_t, ndim> const& s) {
-        unsigned i = 0;
-        std::array<dim_t, nddim> d;
-        size_t p = 1;
-        for (unsigned j = 0; j < ndim; ++j) {
-            if (static_shape[j] < 0)
-                d[i++] = s[j];
-            else if (static_shape[j] != s[j])
-                throw shape_error();
-            p *= s[j];
-        }
-        storage.resize(p);
-        dynamic_sizes = d;
+    constexpr void reshape(shape_t<Head, Tail...> const& s) {
+        storage.resize(s.product());
+        shape_ = s;
     }
-    */
 
     constexpr view<T, Tail...> operator[](dim_t index) {
         return { data() + index * shape_.tail().product(), shape_.tail()};
@@ -239,12 +222,7 @@ struct tensor<T, Head> {
         return {};
     }
 
-    /*
-    constexpr void reshape(std::array<dim_t, 1> const& s) {
-        if (s != shape())
-            throw shape_error();
-    }
-    */
+    constexpr void reshape(shape_t<Head> const&) {}
 
     constexpr T& operator[](dim_t index) {
         return storage[index];
@@ -312,11 +290,9 @@ struct tensor<T, -1> {
         return { (dim_t)storage.size() };
     }
 
-    /*
-    constexpr void reshape(std::array<dim_t, 1> const& s) {
-        storage.resize(s[0]);
+    constexpr void reshape(shape_t<-1> const& s) {
+        storage.resize(s.product());
     }
-    */
 
     constexpr T& operator[](dim_t index) {
         return storage[index];

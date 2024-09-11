@@ -9,7 +9,7 @@
 using namespace game;
 
 
-TEST_CASE("Array") {
+TEST_CASE("To array") {
 
     shape_t<2, 3, 4> a = {};
     shape_t<-1, 10, -1, 20> b = { 5, 15 };
@@ -20,6 +20,41 @@ TEST_CASE("Array") {
     CHECK(b.to_array() == std::array<dim_t, 4> { 5, 10, 15, 20 });
     CHECK(c.to_array() == std::array<dim_t, 1> { 7 });
     CHECK(d.to_array() == std::array<dim_t, 1> { 1000 });
+}
+
+
+TEST_CASE("From array") {
+
+    shape_t<2, 3, 4> a = {};
+    shape_t<-1, 10, -1, 20> b = { 5, 15 };
+    shape_t<7> c = {};
+    shape_t<-1> d = { 1000 };
+
+    std::array<dim_t, 3> m = { 2, 3, 4 };
+    CHECK(a.from_array(m));
+
+    std::array<dim_t, 3> n = { 2, 999, 4 };
+    CHECK(!a.from_array(n));
+
+    std::array<dim_t, 4> o = { 1, 10, 2, 20 };
+    CHECK(b.from_array(o));
+    CHECK(b[0] == 1);
+    CHECK(b[2] == 2);
+
+    std::array<dim_t, 4> p = { 1, 10, 2, 999 };
+    CHECK(!b.from_array(p));
+    CHECK(b[0] == 1);
+    CHECK(b[2] == 2);
+
+    std::array<dim_t, 1> q = { 7 };
+    CHECK(c.from_array(q));
+
+    std::array<dim_t, 1> r = { 0 };
+    CHECK(!c.from_array(r));
+
+    std::array<dim_t, 1> s = { 42 };
+    CHECK(d.from_array(s));
+    CHECK(d[0] == 42);
 }
 
 

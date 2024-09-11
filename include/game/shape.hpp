@@ -44,6 +44,14 @@ struct shape_t {
     constexpr std::array<dim_t, ndim> to_array() const {
         return {};
     }
+
+    constexpr bool from_array(dim_t const* data, size_t size) {
+        return size == 0;
+    }
+
+    constexpr bool from_array(std::array<dim_t, ndim> const&) {
+        return true;
+    }
 };
 
 
@@ -66,6 +74,16 @@ struct shape_t<Head, Tail...> {
 
     constexpr std::array<dim_t, ndim> to_array() const {
         return { Head, Tail... };
+    }
+
+    constexpr bool from_array(dim_t const* data, size_t size) {
+        if (size != ndim || data[0] != Head)
+            return false;
+        return tail().from_array(data + 1, size - 1);
+    }
+
+    constexpr bool from_array(std::array<dim_t, ndim> const& array) {
+        return from_array(array.data(), array.size());
     }
 
     constexpr dim_t head() const {
@@ -99,6 +117,20 @@ struct shape_t<-1, Tail...> {
 
     constexpr std::array<dim_t, ndim> to_array() const {
         return { h, Tail... };
+    }
+
+    constexpr bool from_array(dim_t const* data, size_t size) {
+        if (size != ndim)
+            return false;
+        if (tail().from_array(data + 1, size - 1)) {
+            h = data[0];
+            return true;
+        }
+        return false;
+    }
+
+    constexpr bool from_array(std::array<dim_t, ndim> const& array) {
+        return from_array(array.data(), array.size());
     }
 
     constexpr dim_t head() const {
@@ -139,6 +171,16 @@ struct shape_t<Head, Tail...> {
         return a;
     }
 
+    constexpr bool from_array(dim_t const* data, size_t size) {
+        if (size != ndim || data[0] != Head)
+            return false;
+        return t.from_array(data + 1, size - 1);
+    }
+
+    constexpr bool from_array(std::array<dim_t, ndim> const& array) {
+        return from_array(array.data(), array.size());
+    }
+
     constexpr dim_t head() const {
         return Head;
     }
@@ -176,6 +218,20 @@ struct shape_t<-1, Tail...> {
         std::array<dim_t, ndim - 1> b = t.to_array();
         std::copy_n(b.data(), ndim - 1, a.data() + 1);
         return a;
+    }
+
+    constexpr bool from_array(dim_t const* data, size_t size) {
+        if (size != ndim)
+            return false;
+        if (t.from_array(data + 1, size - 1)) {
+            h = data[0];
+            return true;
+        }
+        return false;
+    }
+
+    constexpr bool from_array(std::array<dim_t, ndim> const& array) {
+        return from_array(array.data(), array.size());
     }
 
     constexpr dim_t head() const {
