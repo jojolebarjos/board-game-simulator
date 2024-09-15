@@ -73,52 +73,54 @@ private:
 		int width = grid.shape()[1];
 
 		// Up
-		if (dy >= 0) {
-			if (y < height - 1) {
-				int value = grid[y + 1][x];
+		if (dy > 0) {
 
-				// Empty space
-				if (value == 0) {
-					if (remaining == 1)
-						visit(x, y + 1);
-					else
-						recurse(x, y + 1, 0, dy, remaining - 1);
-				}
+			// Last row reached
+			if (y >= height - 1)
+				return;
 
-				// Bounce
-				else if (value > 0 && remaining == 1) {
-					grid[y + 1][x] = -1;
-					recurse(x, y + 1, 0, dy, value);
-					grid[y + 1][x] = value;
-				}
+			int value = grid[y + 1][x];
+
+			// Empty space
+			if (value == 0) {
+				if (remaining == 1)
+					visit(x, y + 1);
+				else
+					recurse(x, y + 1, 0, dy, remaining - 1);
+			}
+
+			// Bounce
+			else if (value > 0 && remaining == 1) {
+				grid[y + 1][x] = -1;
+				recurse(x, y + 1, 0, dy, value);
+				grid[y + 1][x] = value;
 			}
 		}
 
 		// Down
-		else {
-			if (y > 0) {
-				int value = grid[y - 1][x];
+		if (dy < 0) {
 
-				// Empty space
-				if (value == 0) {
-					if (remaining == 1)
-						visit(x, y - 1);
-					else
-						recurse(x, y - 1, 0, dy, remaining - 1);
-				}
+			// Last row reached
+			if (y == 0)
+				return;
 
-				// Bounce
-				else if (value > 0 && remaining == 1) {
-					grid[y - 1][x] = -1;
-					recurse(x, y - 1, 0, dy, value);
-					grid[y - 1][x] = value;
-				}
+			int value = grid[y - 1][x];
+
+			// Empty space
+			if (value == 0) {
+				if (remaining == 1)
+					visit(x, y - 1);
+				else
+					recurse(x, y - 1, 0, dy, remaining - 1);
+			}
+
+			// Bounce
+			else if (value > 0 && remaining == 1) {
+				grid[y - 1][x] = -1;
+				recurse(x, y - 1, 0, dy, value);
+				grid[y - 1][x] = value;
 			}
 		}
-
-		// Cannot move horizontally on first/last row
-		if (y <= 0 || y >= height - 1)
-			return;
 
 		// Left
 		if (x > 0 && dx <= 0) {
@@ -385,16 +387,18 @@ void State::apply(Action const& action) {
 
 std::vector<std::shared_ptr<Action>> State::get_actions() {
 	std::vector<std::shared_ptr<Action>> result;
-	for (Move const& move : board.get_moves(player))
-		result.push_back(std::make_shared<Action>(shared_from_this(), move));
+	if (player >= 0)
+		for (Move const& move : board.get_moves(player))
+			result.push_back(std::make_shared<Action>(shared_from_this(), move));
 	return result;
 }
 
 
 std::vector<std::shared_ptr<Action>> State::get_actions_at(Coordinate const& source) {
 	std::vector<std::shared_ptr<Action>> result;
-	for (Move const& move : board.get_moves_at(player, source))
-		result.push_back(std::make_shared<Action>(shared_from_this(), move));
+	if (player >= 0)
+		for (Move const& move : board.get_moves_at(player, source))
+			result.push_back(std::make_shared<Action>(shared_from_this(), move));
 	return result;
 }
 
