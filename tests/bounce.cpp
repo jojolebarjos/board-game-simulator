@@ -10,11 +10,11 @@ using namespace game::bounce;
 
 TEST_CASE("Sanity checks on small board") {
 
-    tensor<int8_t, -1, -1> initial_grid(4, 3);
+    tensor<int8_t, -1, -1> initial_grid(6, 3);
     initial_grid.fill(0);
-    initial_grid[0][0] = initial_grid[3][0] = 1;
-    initial_grid[0][1] = initial_grid[3][1] = 2;
-    initial_grid[0][2] = initial_grid[3][2] = 3;
+    initial_grid[1][0] = initial_grid[4][0] = 1;
+    initial_grid[1][1] = initial_grid[4][1] = 2;
+    initial_grid[1][2] = initial_grid[4][2] = 3;
 
     auto config = std::make_shared<Config>(initial_grid);
 
@@ -22,30 +22,31 @@ TEST_CASE("Sanity checks on small board") {
     auto state = config->sample_initial_state();
     CHECK(!state->has_ended());
     CHECK(state->get_player() == 0);
-    CHECK(state->grid == initial_grid);
-    CHECK(state->actions().size() == 8);
-    CHECK(state->actions_at({ 0, 0 }).size() == 3);
-    CHECK(state->actions_at({ 1, 0 }).size() == 3);
-    CHECK(state->actions_at({ 2, 0 }).size() == 2);
+    CHECK(state->get_grid() == initial_grid);
+    CHECK(state->get_actions().size() == 8);
+    CHECK(state->get_actions_at({ 0, 1 }).size() == 3);
+    CHECK(state->get_actions_at({ 1, 1 }).size() == 3);
+    CHECK(state->get_actions_at({ 2, 1 }).size() == 2);
     CHECK(state->get_reward() == tensor<float, 2> { 0.0f, 0.0f });
 
     // Turn 1
-    state = state->action_at({ 1, 0 }, { 0, 1 })->sample_next_state();
+    state = state->get_action_at({ 1, 1 }, { 0, 2 })->sample_next_state();
     CHECK(!state->has_ended());
     CHECK(state->get_player() == 1);
 
     // Turn 2
-    state = state->action_at({ 2, 3 }, { 0, 2 })->sample_next_state();
+    state = state->get_action_at({ 2, 4 }, { 0, 3 })->sample_next_state();
     CHECK(!state->has_ended());
     CHECK(state->get_player() == 0);
 
     // Turn 3
-    state = state->action_at({ 2, 0 }, { 2, 1 })->sample_next_state();
+    state = state->get_action_at({ 2, 1 }, { 2, 2 })->sample_next_state();
     CHECK(!state->has_ended());
     CHECK(state->get_player() == 1);
 
     // Turn 4
-    state = state->action_at({ 0, 3 }, { 0, -1 })->sample_next_state();
+    auto foo = state->get_actions();
+    state = state->get_action_at({ 0, 4 }, { 0, 0 })->sample_next_state();
     CHECK(state->has_ended());
     CHECK(state->get_reward() == tensor<float, 2> { -1.0f, 1.0f });
 }

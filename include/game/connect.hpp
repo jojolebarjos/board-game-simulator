@@ -26,6 +26,82 @@ namespace connect {
 */
 
 
+struct Board {
+    tensor<int8_t, -1, -1> grid;
+
+    constexpr Board(int height, int width) : grid(height, width) {
+        grid.fill(-1);
+    }
+
+    constexpr int height() const {
+        return grid.shape()[0];
+    }
+
+    constexpr int width() const {
+        return grid.shape()[1];
+    }
+
+    constexpr bool is_full() const {
+        int h = height();
+        int w = width();
+        for (int column = 0; column < w; ++column)
+            if (grid[h - 1][column] < 0)
+                return false;
+        return true;
+    }
+
+    constexpr bool can_play_at(int column) const {
+        return column >= 0 && column < width() && grid[height() - 1][column] < 0;
+    }
+
+    constexpr int play_at(int column, int player) {
+        int h = height();
+        int w = width();
+        if (column >= 0 && column < w)
+            for (int row = 0; row < h; ++row)
+                if (grid[row][column] < 0) {
+                    grid[row][column] = player;
+                    return row;
+                }
+        return -1;
+    }
+
+    constexpr int count_at(int row, int column) const {
+        int player = grid[row][column];
+        int h = height();
+        int w = width();
+
+        int u = 1;
+        for (int j = column; j > 0 && grid[row][--j] == player; ++u);
+        for (int j = column; j < w - 1 && grid[row][++j] == player; ++u);
+
+        int v = 1;
+        for (int i = row; i > 0 && grid[--i][column] == player; ++v);
+        for (int i = row; i < h - 1 && grid[++i][column] == player; ++v);
+
+        int a = 1;
+        for (int i = row, j_ = column; i > 0 && j_ > 0 && grid[--i][--j_] == player; ++a);
+        for (int i = row, j_ = column; i < h - 1 && j_ < w - 1 && grid[++i][++j_] == player; ++a);
+
+        int b = 1;
+        for (int i = row, j = column; i > 0 && j < w - 1 && grid[--i][++j] == player; ++b);
+        for (int i = row, j = column; i < h - 1 && j > 0 && grid[++i][--j] == player; ++b);
+
+        return std::max({ u, v, a, b });
+    }
+
+    constexpr auto operator<=>(Board const& right) const {
+        return std::lexicographical_compare_three_way(
+            grid.data(), grid.data() + grid.size(),
+            right.grid.data(), right.grid.data() + right.grid.size()
+        );
+    }
+
+    // TODO hash
+};
+
+
+struct Config;
 struct State;
 struct Action;
 
@@ -47,23 +123,30 @@ struct Config : std::enable_shared_from_this<Config> {
     }
 
     std::shared_ptr<State> sample_initial_state();
+
+    auto operator<=>(Config const& right) const {
+        if (auto cmp = (height <=> right.height); cmp != 0) return cmp;
+        if (auto cmp = (width <=> right.width); cmp != 0) return cmp;
+        return count <=> right.count;
+    }
 };
 
 
 struct State : std::enable_shared_from_this<State> {
     std::shared_ptr<Config> config;
-    tensor<int8_t, -1, -1> grid;
+    Board board;
     int8_t player;
     int8_t winner;
-    // TODO could store actions as weak_ptr?
 
     State(std::shared_ptr<Config> const& config) :
         config(config),
-        grid(config->height, config->width),
+        board(config->height, config->width),
         player(0),
         winner(-1)
-    {
-        grid.fill(-1);
+    {}
+
+    auto get_grid() const {
+        return board.grid;
     }
 
     bool has_ended() const {
@@ -85,87 +168,27 @@ struct State : std::enable_shared_from_this<State> {
         }
     }
 
-    bool is_full() const {
-        unsigned height = grid.shape()[0];
-        unsigned width = grid.shape()[1];
-        for (unsigned j = 0; j < width; ++j)
-            if (grid[height - 1][j] < 0)
-                return false;
-        return true;
-    }
+    void apply(Action const& action);
 
-    unsigned count_at(unsigned i, unsigned j) const {
-        unsigned who = grid[i][j];
-        unsigned height = grid.shape()[0];
-        unsigned width = grid.shape()[1];
-
-        unsigned h = 1;
-        for (unsigned j_ = j; j_ > 0 && grid[i][--j_] == who; ++h);
-        for (unsigned j_ = j; j_ < width - 1 && grid[i][++j_] == who; ++h);
-
-        unsigned v = 1;
-        for (unsigned i_ = i; i_ > 0 && grid[--i_][j] == who; ++v);
-        for (unsigned i_ = i; i_ < height - 1 && grid[++i_][j] == who; ++v);
-
-        unsigned a = 1;
-        for (unsigned i_ = i, j_ = j; i_ > 0 && j_ > 0 && grid[--i_][--j_] == who; ++a);
-        for (unsigned i_ = i, j_ = j; i_ < height - 1 && j_ < width - 1 && grid[++i_][++j_] == who; ++a);
-
-        unsigned b = 1;
-        for (unsigned i_ = i, j_ = j; i_ > 0 && j_ < width - 1 && grid[--i_][++j_] == who; ++b);
-        for (unsigned i_ = i, j_ = j; i_ < height - 1 && j_ > 0 && grid[++i_][--j_] == who; ++b);
-
-        return std::max({ h, v, a, b });
-    }
-
-    bool can_play_at(unsigned j) const {
-        unsigned height = grid.shape()[0];
-        unsigned width = grid.shape()[1];
-        return !has_ended() && j >= 0 && j < width && grid[height - 1][j] < 0;
-    }
-
-    void play_at(unsigned j) {
-        if (!can_play_at(j))
+    std::shared_ptr<Action> get_action_at(int column) {
+        if (player < 0 || !board.can_play_at(column))
             throw std::runtime_error("invalid move");
-        unsigned height = grid.shape()[0];
-        unsigned count = config->count;
-        for (unsigned i = 0; i < height; ++i) {
-            if (grid[i][j] < 0) {
-                grid[i][j] = player;
-
-                // Check whether this is a win
-                if (count_at(i, j) >= count) {
-                    winner = player;
-                    player = -1;
-                    return;
-                }
-
-                // Check whether this is a draw
-                if (is_full()) {
-                    player = -1;
-                    return;
-                }
-
-                break;
-            }
-        }
-
-        // Game has not ended
-        player = player ? 0 : 1;
+        return std::make_shared<Action>(shared_from_this(), column);
     }
 
-    std::shared_ptr<Action> action_at(unsigned j) {
-        if (!can_play_at(j))
-            throw std::runtime_error("invalid move");
-        return std::make_shared<Action>(shared_from_this(), j);
-    }
-
-    std::vector<std::shared_ptr<Action>> actions() {
+    std::vector<std::shared_ptr<Action>> get_actions() {
         std::vector<std::shared_ptr<Action>> result;
-        for (unsigned j = 0; j < config->width; ++j)
-            if (can_play_at(j))
-                result.push_back(action_at(j));
+        if (player >= 0)
+            for (unsigned column = 0; column < config->width; ++column)
+                if (board.can_play_at(column))
+                    result.push_back(get_action_at(column));
         return result;
+    }
+
+    auto operator<=>(State const& right) const {
+        if (auto cmp = (*config <=> *right.config); cmp != 0) return cmp;
+        if (auto cmp = (board <=> right.board); cmp != 0) return cmp;
+        return player <=> right.player;
     }
 };
 
@@ -186,10 +209,32 @@ struct Action : std::enable_shared_from_this<Action> {
 
     std::shared_ptr<State> sample_next_state() const {
         std::shared_ptr<State> next_state = std::make_shared<State>(*state);
-        next_state->play_at(column);
+        next_state->apply(*this);
         return next_state;
     }
+
+    auto operator<=>(Action const& right) const {
+        if (auto cmp = (*state <=> *right.state); cmp != 0) return cmp;
+        return column <=> right.column;
+    }
 };
+
+
+void State::apply(Action const& action) {
+    int row = board.play_at(action.column, player);
+    if (row < 0)
+        throw std::runtime_error("invalid move");
+    if (board.count_at(row, action.column) >= config->count) {
+        winner = player;
+        player = -1;
+        return;
+    }
+    if (board.is_full()) {
+        player = -1;
+        return;
+    }
+    player = player ? 0 : 1;
+}
 
 
 }
