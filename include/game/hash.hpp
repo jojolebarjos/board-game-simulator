@@ -53,7 +53,7 @@ static constexpr size_t hash_prime = sizeof(size_t) == 4 ? 0x01000193 : 0x100000
 
 template <typename T, typename Enable = void>
 struct hash {
-    static_assert(false);
+    static_assert(sizeof(T) == 0);
 
     constexpr size_t operator()(T const&) const {
         return 0;
