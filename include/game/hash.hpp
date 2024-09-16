@@ -53,11 +53,11 @@ static constexpr size_t hash_prime = sizeof(size_t) == 4 ? 0x01000193 : 0x100000
 
 template <typename T, typename Enable = void>
 struct hash {
-	static_assert(false);
+    static_assert(false);
 
-	constexpr size_t operator()(T const&) const {
-		return 0;
-	}
+    constexpr size_t operator()(T const&) const {
+        return 0;
+    }
 };
 
 
@@ -70,8 +70,8 @@ struct hash {
 
 template <typename T>
 constexpr size_t hash_value(T const& value) {
-	hash<T> hasher;
-	return hasher(value);
+    hash<T> hasher;
+    return hasher(value);
 }
 
 
@@ -81,42 +81,42 @@ constexpr size_t hash_value(T const& value) {
 
 template <typename T>
 constexpr void hash_combine(size_t& seed, T const& value) {
-	seed ^= hash_value(value);
-	seed *= hash_prime;
+    seed ^= hash_value(value);
+    seed *= hash_prime;
 }
 
 template <typename... Ts>
 constexpr size_t hash_many(Ts const&... values) {
-	size_t seed = hash_basis;
-	(hash_combine(seed, values), ...);
-	return seed;
+    size_t seed = hash_basis;
+    (hash_combine(seed, values), ...);
+    return seed;
 }
 
 template <typename It>
 constexpr size_t hash_range(It first, It last) {
-	size_t seed = hash_basis;
-	for (; first != last; ++first)
-		hash_combine(seed, *first);
-	return seed;
+    size_t seed = hash_basis;
+    for (; first != last; ++first)
+        hash_combine(seed, *first);
+    return seed;
 }
 
 template <typename Container>
 constexpr size_t hash_range(Container const& container) {
-	return hash_range(container.begin(), container.end());
+    return hash_range(container.begin(), container.end());
 }
 
 
 /*
  * Simple integral types will just be their own hash, as done in most implementations.
  */
-															  \
-#define GAME_HASH_SIMPLE(TYPE)								  \
-template <>													  \
-struct hash<TYPE> {											  \
-	constexpr size_t operator()(TYPE const& value) const {	  \
-		return (size_t)value;								  \
-	}														  \
-};															  \
+                                                              \
+#define GAME_HASH_SIMPLE(TYPE)                                  \
+template <>                                                      \
+struct hash<TYPE> {                                              \
+    constexpr size_t operator()(TYPE const& value) const {      \
+        return (size_t)value;                                  \
+    }                                                          \
+};                                                              \
 
 GAME_HASH_SIMPLE(char)
 GAME_HASH_SIMPLE(int8_t)
@@ -138,20 +138,20 @@ GAME_HASH_SIMPLE(uint64_t)
 
 template <>
 struct hash<float> {
-	constexpr size_t operator()(float value) const {
-		if (value == 0.0f || value != value)
-			value = 0.0f;
-		return hash_value(std::bit_cast<uint32_t>(value));
-	}
+    constexpr size_t operator()(float value) const {
+        if (value == 0.0f || value != value)
+            value = 0.0f;
+        return hash_value(std::bit_cast<uint32_t>(value));
+    }
 };
 
 template <>
 struct hash<double> {
-	constexpr size_t operator()(double value) const {
-		if (value == 0.0 || value != value)
-			value = 0.0;
-		return hash_value(std::bit_cast<uint64_t>(value));
-	}
+    constexpr size_t operator()(double value) const {
+        if (value == 0.0 || value != value)
+            value = 0.0;
+        return hash_value(std::bit_cast<uint64_t>(value));
+    }
 };
 
 
@@ -161,23 +161,23 @@ struct hash<double> {
 
 template <typename... T>
 struct hash<std::tuple<T...>> {
-	constexpr size_t operator()(std::tuple<T...> const& value) const {
-		return std::apply(hash_many<T...>, value);
-	}
+    constexpr size_t operator()(std::tuple<T...> const& value) const {
+        return std::apply(hash_many<T...>, value);
+    }
 };
 
 template <typename T, size_t N>
 struct hash<std::array<T, N>> {
-	constexpr size_t operator()(std::array<T, N> const& value) const {
-		return hash_range(value);
-	}
+    constexpr size_t operator()(std::array<T, N> const& value) const {
+        return hash_range(value);
+    }
 };
 
 template <typename T, typename Allocator>
 struct hash<std::vector<T, Allocator>> {
-	constexpr size_t operator()(std::vector<T, Allocator> const& value) const {
-		return hash_range(value);
-	}
+    constexpr size_t operator()(std::vector<T, Allocator> const& value) const {
+        return hash_range(value);
+    }
 };
 
 
@@ -188,9 +188,9 @@ struct hash<std::vector<T, Allocator>> {
 
 template <typename T>
 struct hash<std::shared_ptr<T>> {
-	constexpr size_t operator()(std::shared_ptr<T> const& value) const {
-		return hash_value(*value);
-	}
+    constexpr size_t operator()(std::shared_ptr<T> const& value) const {
+        return hash_value(*value);
+    }
 };
 
 
