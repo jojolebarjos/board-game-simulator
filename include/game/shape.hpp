@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <stdexcept>
 
+#include "./hash.hpp"
+
 
 namespace game {
 
@@ -261,6 +263,14 @@ constexpr bool operator==(shape_t<L...> const& left, shape_t<R...> const& right)
         return left.to_array() == right.to_array();
     }
 }
+
+
+template <dim_t... N>
+struct hash<shape_t<N...>> {
+    constexpr size_t operator()(shape_t<N...> const& value) const {
+        return hash_value(value.to_array());
+    }
+};
 
 
 }

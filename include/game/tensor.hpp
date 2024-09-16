@@ -588,8 +588,8 @@ struct view<T, -1> {
 };
 
 
-// TODO arithmetic operators
-// TODO comparison operators
+// TODO arithmetic operators?
+
 
 #define GAME_TENSOR_MAKE_OPERATORS(ltype, rtype)                                           \
                                                                                            \
@@ -599,6 +599,14 @@ constexpr bool operator==(ltype<T, L...> const& left, rtype<T, R...> const& righ
         return false;                                                                      \
     return std::equal(left.data(), left.data() + left.shape().product(), right.data());    \
 }                                                                                          \
+                                                                                           \
+template <typename T, dim_t... L, dim_t... R>                                              \
+constexpr auto operator<=>(ltype<T, L...> const& left, rtype<T, R...> const& right) {      \
+    return std::lexicographical_compare_three_way(                                         \
+        left.data(), left.data() + left.size(),                                            \
+        right.data(), right.data() + right.size()                                          \
+    );                                                                                     \
+}                                                                                          \
 
 GAME_TENSOR_MAKE_OPERATORS(tensor, tensor)
 GAME_TENSOR_MAKE_OPERATORS(tensor, view)
@@ -606,6 +614,21 @@ GAME_TENSOR_MAKE_OPERATORS(view, tensor)
 GAME_TENSOR_MAKE_OPERATORS(view, view)
 
 #undef GAME_TENSOR_MAKE_OPERATORS
+
+
+template <typename T, dim_t Head, dim_t... Tail>
+struct hash<tensor<T, Head, Tail...>> {
+    constexpr size_t operator()(tensor<T, Head, Tail...> const& value) const {
+        return hash_value(value.storage);
+    }
+};
+
+template <typename T, dim_t Head, dim_t... Tail>
+struct hash<view<T, Head, Tail...>> {
+    constexpr size_t operator()(view<T, Head, Tail...> const& value) const {
+        return hash_range(value.data(), value.data() + value.size());
+    }
+};
 
 
 }

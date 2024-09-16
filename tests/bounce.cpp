@@ -52,32 +52,45 @@ TEST_CASE("Sanity checks on small board") {
 }
 
 
-TEST_CASE("Check blocked states") {
+TEST_CASE("Hash and equal") {
+    tensor<int8_t, -1, -1> grid(9, 6);
+    grid.storage = std::vector<int8_t>{
+        0, 0, 0, 0, 0, 0,
+        1, 2, 3, 3, 2, 1,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0,
+        1, 2, 3, 3, 2, 1,
+        0, 0, 0, 0, 0, 0
+    };
 
-    // TODO empty cannot be played
-    //   0, 0, 0, 0, 0, 0
-    //   0, 0, 0, 0, 0, 0
-    //   0, 0, 0, 0, 0, 0
-    //   0, 0, 0, 0, 0, 0
-    //   0, 0, 0, 0, 0, 0
-    //   0, 0, 0, 0, 0, 0
-    //   0, 0, 0, 0, 0, 0
+    auto config = std::make_shared<Config>(grid);
 
-    // TODO player 1 cannot play, but player 0 can
-    //   0, 0, 0, 0, 0, 0
-    //   3, 3, 3, 3, 0, 3
-    //   3, 3, 3, 3, 3, 3
-    //   0, 0, 0, 0, 0, 0
-    //   0, 0, 0, 0, 0, 0
-    //   0, 0, 0, 0, 0, 0
-    //   0, 0, 0, 0, 0, 0
+    auto initial_state = config->sample_initial_state();
 
-    // TODO player 1 can play (2, 6) -> (2, 3), and then it is draw
-    //   0, 0, 3, 0, 0, 0
-    //   0, 0, 0, 0, 0, 0
-    //   0, 0, 0, 0, 0, 0
-    //   3, 0, 0, 0, 3, 0
-    //   3, 3, 3, 3, 3, 3
-    //   2, 2, 2, 2, 2, 2
-    //   0, 0, 0, 0, 0, 0
+    auto state_a = initial_state
+        ->get_action_at({ 0, 1 }, { 1, 3 })->sample_next_state()
+        ->get_action_at({ 2, 7 }, { 3, 5 })->sample_next_state()
+        ->get_action_at({ 1, 1 }, { 0, 2 })->sample_next_state()
+        ->get_action_at({ 3, 7 }, { 2, 5 })->sample_next_state();
+
+    auto state_b = initial_state
+        ->get_action_at({ 1, 1 }, { 0, 2 })->sample_next_state()
+        ->get_action_at({ 3, 7 }, { 2, 5 })->sample_next_state()
+        ->get_action_at({ 0, 1 }, { 1, 3 })->sample_next_state()
+        ->get_action_at({ 2, 7 }, { 3, 5 })->sample_next_state();
+
+    CHECK(*state_a == *state_b);
+    CHECK(hash_value(state_a) == hash_value(state_b));
+
+    CHECK(*state_a->get_action_at({ 5, 1 }, { 5, 2 }) == *state_b->get_action_at({ 5, 1 }, { 5, 2 }));
+    CHECK(hash_value(state_a->get_action_at({ 5, 1 }, { 5, 2 })) == hash_value(state_b->get_action_at({ 5, 1 }, { 5, 2 })));
+
+    CHECK(*state_a->config == *state_b->config);
+    CHECK(hash_value(state_a->config) == hash_value(state_b->config));
+
+    CHECK(hash_value(state_a) != hash_value(initial_state));
+    CHECK(hash_value(state_a->get_action_at({ 5, 1 }, { 5, 2 })) != hash_value(initial_state->get_action_at({ 5, 1 }, { 5, 2 })));
 }

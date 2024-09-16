@@ -44,3 +44,36 @@ TEST_CASE("Sanity checks on small board") {
     CHECK(state->get_actions().size() == 0);
     CHECK(state->get_reward() == tensor<float, 2> { 1.0f, -1.0f });
 }
+
+
+TEST_CASE("Hash and equal") {
+    auto config = std::make_shared<Config>(6, 7, 4);
+
+    auto initial_state = config->sample_initial_state();
+
+    auto state_a = initial_state
+        ->get_action_at(1)->sample_next_state()
+        ->get_action_at(2)->sample_next_state()
+        ->get_action_at(3)->sample_next_state()
+        ->get_action_at(1)->sample_next_state();
+
+    auto state_b = initial_state
+        ->get_action_at(3)->sample_next_state()
+        ->get_action_at(2)->sample_next_state()
+        ->get_action_at(1)->sample_next_state()
+        ->get_action_at(1)->sample_next_state();
+
+    CHECK(*initial_state < *state_b);
+
+    CHECK(*state_a == *state_b);
+    CHECK(hash_value(state_a) == hash_value(state_b));
+
+    CHECK(*state_a->get_action_at(0) == *state_b->get_action_at(0));
+    CHECK(hash_value(state_a->get_action_at(0)) == hash_value(state_b->get_action_at(0)));
+
+    CHECK(*state_a->config == *state_b->config);
+    CHECK(hash_value(state_a->config) == hash_value(state_b->config));
+
+    CHECK(hash_value(state_a) != hash_value(initial_state));
+    CHECK(hash_value(state_a->get_action_at(0)) != hash_value(initial_state->get_action_at(0)));
+}

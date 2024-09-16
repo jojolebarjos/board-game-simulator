@@ -14,6 +14,7 @@ function(add_game_test TEST_NAME TEST_SOURCE)
 	add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endfunction()
 
+add_game_test(test_hash hash.cpp)
 add_game_test(test_shape shape.cpp)
 add_game_test(test_tensor tensor.cpp)
 add_game_test(test_connect connect.cpp)

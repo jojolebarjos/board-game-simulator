@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "./comparison.hpp"
 #include "./tensor.hpp"
 
 
@@ -106,7 +107,7 @@ struct State;
 struct Action;
 
 
-struct Config : std::enable_shared_from_this<Config> {
+struct Config : std::enable_shared_from_this<Config>, Comparable<Config> {
     // TODO maybe accept more than 2 players?
     static constexpr int num_players = 2;
     int height;
@@ -124,15 +125,13 @@ struct Config : std::enable_shared_from_this<Config> {
 
     std::shared_ptr<State> sample_initial_state();
 
-    auto operator<=>(Config const& right) const {
-        if (auto cmp = (height <=> right.height); cmp != 0) return cmp;
-        if (auto cmp = (width <=> right.width); cmp != 0) return cmp;
-        return count <=> right.count;
+    constexpr auto get_identity_tuple() const {
+        return std::tie(height, width, count);
     }
 };
 
 
-struct State : std::enable_shared_from_this<State> {
+struct State : std::enable_shared_from_this<State>, Comparable<State> {
     std::shared_ptr<Config> config;
     Board board;
     int8_t player;
@@ -185,10 +184,8 @@ struct State : std::enable_shared_from_this<State> {
         return result;
     }
 
-    auto operator<=>(State const& right) const {
-        if (auto cmp = (*config <=> *right.config); cmp != 0) return cmp;
-        if (auto cmp = (board <=> right.board); cmp != 0) return cmp;
-        return player <=> right.player;
+    constexpr auto get_identity_tuple() const {
+        return std::tie(board.grid, player);
     }
 };
 
@@ -198,7 +195,7 @@ std::shared_ptr<State> Config::sample_initial_state() {
 }
 
 
-struct Action : std::enable_shared_from_this<Action> {
+struct Action : std::enable_shared_from_this<Action>, Comparable<Action> {
     std::shared_ptr<State> state;
     unsigned column;
 
@@ -213,9 +210,8 @@ struct Action : std::enable_shared_from_this<Action> {
         return next_state;
     }
 
-    auto operator<=>(Action const& right) const {
-        if (auto cmp = (*state <=> *right.state); cmp != 0) return cmp;
-        return column <=> right.column;
+    constexpr auto get_identity_tuple() const {
+        return std::tie(state->board.grid, state->player, column);
     }
 };
 

@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <vector>
 
+#include "./comparison.hpp"
 #include "./tensor.hpp"
 
 
@@ -271,7 +272,7 @@ class State;
 class Action;
 
 
-struct Config : std::enable_shared_from_this<Config> {
+struct Config : std::enable_shared_from_this<Config>, Comparable<Config> {
 	static constexpr int num_players = 2;
 	Board board;
 
@@ -286,10 +287,14 @@ struct Config : std::enable_shared_from_this<Config> {
 	}
 
 	std::shared_ptr<State> sample_initial_state();
+
+	constexpr auto get_identity_tuple() const {
+		return std::tie(board.grid);
+	}
 };
 
 
-struct State : std::enable_shared_from_this<State> {
+struct State : std::enable_shared_from_this<State>, Comparable<State> {
 	std::shared_ptr<Config> config;
 	Board board;
 	int8_t player;
@@ -330,6 +335,10 @@ struct State : std::enable_shared_from_this<State> {
 	std::vector<std::shared_ptr<Action>> get_actions();
 	std::vector<std::shared_ptr<Action>> get_actions_at(Coordinate const& source);
 	std::shared_ptr<Action> get_action_at(Coordinate const& source, Coordinate const& target);
+
+	constexpr auto get_identity_tuple() const {
+		return std::tie(board.grid, player);
+	}
 };
 
 
@@ -338,7 +347,7 @@ std::shared_ptr<State> Config::sample_initial_state() {
 }
 
 
-struct Action : std::enable_shared_from_this<Action> {
+struct Action : std::enable_shared_from_this<Action>, Comparable<Action> {
 	std::shared_ptr<State> state;
 	Move move;
 
@@ -356,6 +365,10 @@ struct Action : std::enable_shared_from_this<Action> {
 		std::shared_ptr<State> next_state = std::make_shared<State>(*state);
 		next_state->apply(*this);
 		return next_state;
+	}
+
+	constexpr auto get_identity_tuple() const {
+		return std::tie(state->board.grid, state->player, move.source, move.target);
 	}
 };
 
