@@ -14,11 +14,11 @@ namespace game {
 template <typename Derived>
 struct Comparable {
 
-    constexpr bool operator==(Derived const& right) const {
+    constexpr bool operator==(Comparable<Derived> const& right) const {
         return derived().get_identity_tuple() == right.derived().get_identity_tuple();
     }
 
-    constexpr auto operator<=>(Derived const& right) const {
+    constexpr auto operator<=>(Comparable<Derived> const& right) const {
         return derived().get_identity_tuple() <=> right.derived().get_identity_tuple();
     }
 
