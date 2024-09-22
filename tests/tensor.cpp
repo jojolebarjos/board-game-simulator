@@ -88,3 +88,31 @@ TEST_CASE("Reshape") {
 
     CHECK(y.shape().to_array() == std::array<dim_t, 3> { 27, 2, 4 });
 }
+
+
+TEST_CASE("JSON") {
+
+    nlohmann::json j;
+
+    tensor<int, 2> x = { 10, 20 };
+    j = x;
+    CHECK(j == nlohmann::json { 10, 20 });
+
+    tensor<float, -1, 2> y(3);
+    y.storage = std::vector<float> { 0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f };
+    j = y;
+    CHECK(j == nlohmann::json { { 0.0f, 1.0f }, { 2.0f, 3.0f }, { 4.0f, 5.0f } });
+
+    j = { { 10.0f, 20.0f }, { 30.0f, 40.0f } };
+    j.get_to(y);
+    CHECK(y.shape().to_array() == std::array<dim_t, 2> { 2, 2 });
+    CHECK(y.storage == std::vector<float> { 10.0f, 20.0f, 30.0f, 40.0f });
+
+    j = y[1];
+    CHECK(j == nlohmann::json { 30.0f, 40.0f });
+
+    j = nlohmann::json::array();
+    j.get_to(y);
+    CHECK(y.shape().to_array() == std::array<dim_t, 2> { 0, 2 });
+    CHECK(y.storage == std::vector<float> {});
+}

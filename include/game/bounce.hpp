@@ -291,6 +291,18 @@ struct Config : std::enable_shared_from_this<Config>, Comparable<Config> {
     constexpr auto get_identity_tuple() const {
         return std::tie(board.grid);
     }
+
+    nlohmann::json to_json() const {
+        return {
+            { "grid", board.grid }
+        };
+    }
+
+    static std::shared_ptr<Config> from_json(nlohmann::json const& j) {
+        Grid grid;
+        j.at("grid").get_to(grid);
+        return std::make_shared<Config>(grid);
+    }
 };
 
 
@@ -339,6 +351,25 @@ struct State : std::enable_shared_from_this<State>, Comparable<State> {
     constexpr auto get_identity_tuple() const {
         return std::tie(board.grid, player);
     }
+
+    nlohmann::json to_json() const {
+        return {
+            { "config", config->to_json() },
+            { "grid", board.grid },
+            { "player", player }
+        };
+    }
+
+    static std::shared_ptr<State> from_json(nlohmann::json const& j) {
+        auto config = Config::from_json(j.at("config"));
+        auto state = std::make_shared<State>(config);
+        j.at("grid").get_to(state->board.grid);
+        j.at("player").get_to(state->player);
+        // TODO set winner accordingly
+        // TODO check player
+        // TODO check that board matches configuration
+        return state;
+    }
 };
 
 
@@ -369,6 +400,24 @@ struct Action : std::enable_shared_from_this<Action>, Comparable<Action> {
 
     constexpr auto get_identity_tuple() const {
         return std::tie(state->board.grid, state->player, move.source, move.target);
+    }
+
+    nlohmann::json to_json() const {
+        return {
+            { "state", state->to_json() },
+            { "source", move.source },
+            { "target", move.target }
+        };
+    }
+
+    static std::shared_ptr<Action> from_json(nlohmann::json const& j) {
+        auto state = State::from_json(j.at("state"));
+        Move move = {};
+        j.at("source").get_to(move.source);
+        j.at("target").get_to(move.target);
+        auto action = std::make_shared<Action>(state, move);
+        // TODO check that move is valid
+        return action;
     }
 };
 

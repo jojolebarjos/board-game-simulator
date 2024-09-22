@@ -77,3 +77,27 @@ TEST_CASE("Hash and equal") {
     CHECK(hash_value(state_a) != hash_value(initial_state));
     CHECK(hash_value(state_a->get_action_at(0)) != hash_value(initial_state->get_action_at(0)));
 }
+
+
+TEST_CASE("JSON") {
+
+    auto config = std::make_shared<Config>(2, 3, 2);
+
+    CHECK(config->to_json() == nlohmann::json { { "height", 2 }, { "width", 3 }, { "count", 2 } });
+    CHECK(*Config::from_json(config->to_json()) == *config);
+
+    auto state = config->sample_initial_state()->get_action_at(2)->sample_next_state();
+    CHECK(state->to_json() == nlohmann::json{
+        { "config", config->to_json() },
+        { "grid", { {-1, -1, 0 }, { -1, -1, -1 } } },
+        { "player", 1 }
+    });
+    CHECK(*State::from_json(state->to_json()) == *state);
+
+    auto action = state->get_action_at(1);
+    CHECK(action->to_json() == nlohmann::json{
+        { "state", state->to_json() },
+        { "column", 1 }
+    });
+    CHECK(*Action::from_json(action->to_json()) == *action);
+}

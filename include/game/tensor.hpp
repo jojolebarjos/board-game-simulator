@@ -8,6 +8,8 @@
 #include <initializer_list>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 #include "./shape.hpp"
 
 
@@ -37,6 +39,9 @@ struct tensor;
  */
 template <typename T, dim_t Head, dim_t... Tail>
 struct view;
+
+
+// TODO should maybe define begin() and end(), which are slice iterators, and change the semantics of data() and size()?
 
 
 /*
@@ -629,6 +634,49 @@ struct hash<view<T, Head, Tail...>> {
         return hash_range(value.data(), value.data() + value.size());
     }
 };
+
+
+template <typename T, dim_t Head, dim_t... Tail>
+void to_json(nlohmann::json& j, view<T, Head, Tail...> const value) {
+    j = nlohmann::json::array();
+    dim_t h = value.shape().head();
+    for (dim_t i = 0; i < h; ++i)
+        j.emplace_back(value[i]);
+}
+
+template <typename T, dim_t Head, dim_t... Tail>
+void to_json(nlohmann::json& j, tensor<T, Head, Tail...> const& value) {
+    to_json(j, value.as_view());
+}
+
+
+template <typename T, dim_t Head, dim_t... Tail>
+void from_json(nlohmann::json const& j, view<T, Head, Tail...> value) {
+    dim_t head = value.shape().head();
+    if (!j.is_array() || j.size() != head)
+        throw shape_error();
+    for (dim_t i = 0; i < head; ++i)
+        from_json(j[i], value[i]);
+}
+
+template <typename T, dim_t Head, dim_t... Tail>
+void from_json(nlohmann::json const& j, tensor<T, Head, Tail...>& value) {
+    shape_t<Head, Tail...> shape = {};
+    auto dims = shape.to_array();
+    nlohmann::json const* ji = &j;
+    for (unsigned i = 0; i < shape.size(); ++i) {
+        if (!ji->is_array())
+            throw shape_error();
+        dims[i] = ji->size();
+        if (dims[i] == 0)
+            break;
+        ji = &ji->at(0);
+    }
+    if (!shape.from_array(dims))
+        throw shape_error();
+    value.reshape(shape);
+    from_json(j, value.as_view());
+}
 
 
 }

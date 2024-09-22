@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include <nlohmann/json.hpp>
+
 #include "./comparison.hpp"
 #include "./tensor.hpp"
 
@@ -97,8 +99,6 @@ struct Board {
             right.grid.data(), right.grid.data() + right.grid.size()
         );
     }
-
-    // TODO hash
 };
 
 
@@ -127,6 +127,24 @@ struct Config : std::enable_shared_from_this<Config>, Comparable<Config> {
 
     constexpr auto get_identity_tuple() const {
         return std::tie(height, width, count);
+    }
+
+    nlohmann::json to_json() const {
+        return {
+            { "height", height },
+            { "width", width },
+            { "count", count }
+        };
+    }
+
+    static std::shared_ptr<Config> from_json(nlohmann::json const& j) {
+        int height = 0;
+        int width = 0;
+        int count = 0;
+        j.at("height").get_to(height);
+        j.at("width").get_to(width);
+        j.at("count").get_to(count);
+        return std::make_shared<Config>(height, width, count);
     }
 };
 
@@ -187,6 +205,25 @@ struct State : std::enable_shared_from_this<State>, Comparable<State> {
     constexpr auto get_identity_tuple() const {
         return std::tie(board.grid, player);
     }
+
+    nlohmann::json to_json() const {
+        return {
+            { "config", config->to_json() },
+            { "grid", board.grid },
+            { "player", player }
+        };
+    }
+
+    static std::shared_ptr<State> from_json(nlohmann::json const& j) {
+        auto config = Config::from_json(j.at("config"));
+        auto state = std::make_shared<State>(config);
+        j.at("grid").get_to(state->board.grid);
+        j.at("player").get_to(state->player);
+        // TODO set winner accordingly
+        // TODO check player
+        // TODO check that board matches configuration
+        return state;
+    }
 };
 
 
@@ -212,6 +249,22 @@ struct Action : std::enable_shared_from_this<Action>, Comparable<Action> {
 
     constexpr auto get_identity_tuple() const {
         return std::tie(state->board.grid, state->player, column);
+    }
+
+    nlohmann::json to_json() const {
+        return {
+            { "state", state->to_json() },
+            { "column", column }
+        };
+    }
+
+    static std::shared_ptr<Action> from_json(nlohmann::json const& j) {
+        auto state = State::from_json(j.at("state"));
+        unsigned column = 0;
+        j.at("column").get_to(column);
+        auto action = std::make_shared<Action>(state, column);
+        // TODO check that column is valid
+        return action;
     }
 };
 

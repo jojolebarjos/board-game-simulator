@@ -94,3 +94,54 @@ TEST_CASE("Hash and equal") {
     CHECK(hash_value(state_a) != hash_value(initial_state));
     CHECK(hash_value(state_a->get_action_at({ 5, 1 }, { 5, 2 })) != hash_value(initial_state->get_action_at({ 5, 1 }, { 5, 2 })));
 }
+
+
+TEST_CASE("JSON") {
+
+    tensor<int8_t, -1, -1> grid(6, 3);
+    grid.storage = std::vector<int8_t>{
+        0, 0, 0,
+        1, 2, 3,
+        0, 0, 0,
+        0, 0, 0,
+        1, 2, 3,
+        0, 0, 0
+    };
+
+    auto config = std::make_shared<Config>(grid);
+
+    CHECK(config->to_json() == nlohmann::json {
+        { "grid", {
+            { 0, 0, 0 },
+            { 1, 2, 3 },
+            { 0, 0, 0 },
+            { 0, 0, 0 },
+            { 1, 2, 3 },
+            { 0, 0, 0 }
+        } }
+    });
+    CHECK(*Config::from_json(config->to_json()) == *config);
+
+    auto state = config->sample_initial_state()->get_action_at({ 2, 1 }, { 1, 3 })->sample_next_state();
+    CHECK(state->to_json() == nlohmann::json{
+        { "config", config->to_json() },
+        { "grid", {
+            { 0, 0, 0 },
+            { 1, 2, 0 },
+            { 0, 0, 0 },
+            { 0, 3, 0 },
+            { 1, 2, 3 },
+            { 0, 0, 0 }
+        } },
+        { "player", 1 }
+    });
+    CHECK(*State::from_json(state->to_json()) == *state);
+
+    auto action = state->get_action_at({ 0, 4 }, { 0, 3 });
+    CHECK(action->to_json() == nlohmann::json{
+        { "state", state->to_json() },
+        { "source", { 0, 4 } },
+        { "target", { 0, 3 } }
+    });
+    CHECK(*Action::from_json(action->to_json()) == *action);
+}
