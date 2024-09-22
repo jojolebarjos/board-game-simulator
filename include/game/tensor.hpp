@@ -623,14 +623,14 @@ GAME_TENSOR_MAKE_OPERATORS(view, view)
 
 template <typename T, dim_t Head, dim_t... Tail>
 struct hash<tensor<T, Head, Tail...>> {
-    constexpr size_t operator()(tensor<T, Head, Tail...> const& value) const {
+    size_t operator()(tensor<T, Head, Tail...> const& value) const {
         return hash_value(value.storage);
     }
 };
 
 template <typename T, dim_t Head, dim_t... Tail>
 struct hash<view<T, Head, Tail...>> {
-    constexpr size_t operator()(view<T, Head, Tail...> const& value) const {
+    size_t operator()(view<T, Head, Tail...> const& value) const {
         return hash_range(value.data(), value.data() + value.size());
     }
 };

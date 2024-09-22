@@ -80,7 +80,7 @@ TEST_CASE("Reshape") {
 
     CHECK(y.shape().to_array() == std::array<dim_t, 3> { 0, 2, 0 });
 
-    y = tensor<int, -1, 2, -1>({ 5, 8 });
+    y = tensor<int, -1, 2, -1>(shape_t<-1, 2, -1> { 5, 8 });
 
     CHECK(y.shape().to_array() == std::array<dim_t, 3> { 5, 2, 8 });
 

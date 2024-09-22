@@ -125,7 +125,7 @@ struct Config : std::enable_shared_from_this<Config>, Comparable<Config> {
 
     std::shared_ptr<State> sample_initial_state();
 
-    constexpr auto get_identity_tuple() const {
+    auto get_identity_tuple() const {
         return std::tie(height, width, count);
     }
 
@@ -202,7 +202,7 @@ struct State : std::enable_shared_from_this<State>, Comparable<State> {
         return result;
     }
 
-    constexpr auto get_identity_tuple() const {
+    auto get_identity_tuple() const {
         return std::tie(board.grid, player);
     }
 
@@ -247,7 +247,7 @@ struct Action : std::enable_shared_from_this<Action>, Comparable<Action> {
         return next_state;
     }
 
-    constexpr auto get_identity_tuple() const {
+    auto get_identity_tuple() const {
         return std::tie(state->board.grid, state->player, column);
     }
 

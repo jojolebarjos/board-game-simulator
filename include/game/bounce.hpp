@@ -288,7 +288,7 @@ struct Config : std::enable_shared_from_this<Config>, Comparable<Config> {
 
     std::shared_ptr<State> sample_initial_state();
 
-    constexpr auto get_identity_tuple() const {
+    auto get_identity_tuple() const {
         return std::tie(board.grid);
     }
 
@@ -348,7 +348,7 @@ struct State : std::enable_shared_from_this<State>, Comparable<State> {
     std::vector<std::shared_ptr<Action>> get_actions_at(Coordinate const& source);
     std::shared_ptr<Action> get_action_at(Coordinate const& source, Coordinate const& target);
 
-    constexpr auto get_identity_tuple() const {
+    auto get_identity_tuple() const {
         return std::tie(board.grid, player);
     }
 
@@ -398,7 +398,7 @@ struct Action : std::enable_shared_from_this<Action>, Comparable<Action> {
         return next_state;
     }
 
-    constexpr auto get_identity_tuple() const {
+    auto get_identity_tuple() const {
         return std::tie(state->board.grid, state->player, move.source, move.target);
     }
 
