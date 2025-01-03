@@ -109,7 +109,7 @@ size_t hash_range(Container const& container) {
 /*
  * Simple integral types will just be their own hash, as done in most implementations.
  */
-                                                              \
+
 #define GAME_HASH_SIMPLE(TYPE)                                \
 template <>                                                   \
 struct hash<TYPE> {                                           \
@@ -119,14 +119,16 @@ struct hash<TYPE> {                                           \
 };                                                            \
 
 GAME_HASH_SIMPLE(char)
-GAME_HASH_SIMPLE(int8_t)
-GAME_HASH_SIMPLE(uint8_t)
-GAME_HASH_SIMPLE(int16_t)
-GAME_HASH_SIMPLE(uint16_t)
-GAME_HASH_SIMPLE(int32_t)
-GAME_HASH_SIMPLE(uint32_t)
-GAME_HASH_SIMPLE(int64_t)
-GAME_HASH_SIMPLE(uint64_t)
+GAME_HASH_SIMPLE(unsigned char)
+GAME_HASH_SIMPLE(signed char)
+GAME_HASH_SIMPLE(unsigned short)
+GAME_HASH_SIMPLE(signed short)
+GAME_HASH_SIMPLE(unsigned int)
+GAME_HASH_SIMPLE(signed int)
+GAME_HASH_SIMPLE(unsigned long)
+GAME_HASH_SIMPLE(signed long)
+GAME_HASH_SIMPLE(unsigned long long)
+GAME_HASH_SIMPLE(signed long long)
 
 #undef GAME_HASH_SIMPLE
 
