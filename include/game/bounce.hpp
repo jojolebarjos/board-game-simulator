@@ -354,14 +354,12 @@ struct State : std::enable_shared_from_this<State>, Comparable<State> {
 
     nlohmann::json to_json() const {
         return {
-            { "config", config->to_json() },
             { "grid", board.grid },
             { "player", player }
         };
     }
 
-    static std::shared_ptr<State> from_json(nlohmann::json const& j) {
-        auto config = Config::from_json(j.at("config"));
+    static std::shared_ptr<State> from_json(nlohmann::json const& j, std::shared_ptr<Config> const& config) {
         auto state = std::make_shared<State>(config);
         j.at("grid").get_to(state->board.grid);
         j.at("player").get_to(state->player);
@@ -404,14 +402,12 @@ struct Action : std::enable_shared_from_this<Action>, Comparable<Action> {
 
     nlohmann::json to_json() const {
         return {
-            { "state", state->to_json() },
             { "source", move.source },
             { "target", move.target }
         };
     }
 
-    static std::shared_ptr<Action> from_json(nlohmann::json const& j) {
-        auto state = State::from_json(j.at("state"));
+    static std::shared_ptr<Action> from_json(nlohmann::json const& j, std::shared_ptr<State> const& state) {
         Move move = {};
         j.at("source").get_to(move.source);
         j.at("target").get_to(move.target);

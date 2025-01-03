@@ -124,7 +124,6 @@ TEST_CASE("JSON") {
 
     auto state = config->sample_initial_state()->get_action_at({ 2, 1 }, { 1, 3 })->sample_next_state();
     CHECK(state->to_json() == nlohmann::json{
-        { "config", config->to_json() },
         { "grid", {
             { 0, 0, 0 },
             { 1, 2, 0 },
@@ -135,13 +134,12 @@ TEST_CASE("JSON") {
         } },
         { "player", 1 }
     });
-    CHECK(*State::from_json(state->to_json()) == *state);
+    CHECK(*State::from_json(state->to_json(), config) == *state);
 
     auto action = state->get_action_at({ 0, 4 }, { 0, 3 });
     CHECK(action->to_json() == nlohmann::json{
-        { "state", state->to_json() },
         { "source", { 0, 4 } },
         { "target", { 0, 3 } }
     });
-    CHECK(*Action::from_json(action->to_json()) == *action);
+    CHECK(*Action::from_json(action->to_json(), state) == *action);
 }
