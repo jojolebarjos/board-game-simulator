@@ -273,7 +273,11 @@ class Action;
 
 
 struct Config : std::enable_shared_from_this<Config>, Comparable<Config> {
+    using State = State;
+    using Action = Action;
+
     static constexpr int num_players = 2;
+
     Board board;
 
     Config(Grid const& grid) : board(grid) {
@@ -307,6 +311,9 @@ struct Config : std::enable_shared_from_this<Config>, Comparable<Config> {
 
 
 struct State : std::enable_shared_from_this<State>, Comparable<State> {
+    using Config = Config;
+    using Action = Action;
+
     std::shared_ptr<Config> config;
     Board board;
     int8_t player;
@@ -377,6 +384,9 @@ std::shared_ptr<State> Config::sample_initial_state() {
 
 
 struct Action : std::enable_shared_from_this<Action>, Comparable<Action> {
+    using Config = Config;
+    using State = State;
+
     std::shared_ptr<State> state;
     Move move;
 
