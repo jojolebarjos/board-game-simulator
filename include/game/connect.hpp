@@ -108,8 +108,8 @@ struct Action;
 
 
 struct Config : std::enable_shared_from_this<Config>, Comparable<Config> {
-    using State = State;
-    using Action = Action;
+    using State = game::connect::State;
+    using Action = game::connect::Action;
 
     static constexpr int num_players = 2;
 
@@ -153,8 +153,8 @@ struct Config : std::enable_shared_from_this<Config>, Comparable<Config> {
 
 
 struct State : std::enable_shared_from_this<State>, Comparable<State> {
-    using Config = Config;
-    using Action = Action;
+    using Config = game::connect::Config;
+    using Action = game::connect::Action;
 
     std::shared_ptr<Config> config;
     Board board;
@@ -237,8 +237,8 @@ std::shared_ptr<State> Config::sample_initial_state() {
 
 
 struct Action : std::enable_shared_from_this<Action>, Comparable<Action> {
-    using Config = Config;
-    using State = State;
+    using Config = game::connect::Config;
+    using State = game::connect::State;
 
     std::shared_ptr<State> state;
     unsigned column;
